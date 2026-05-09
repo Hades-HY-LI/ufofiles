@@ -4,6 +4,8 @@ A static-first archive for official UFO/UAP records published at `war.gov/ufo`.
 
 The MVP is a Next.js app backed by repo-local JSON. It emphasizes provenance, browsability, and a sober dark archival interface over commentary or speculation.
 
+This is an independent fan archive and is not affiliated with the U.S. government.
+
 ## MVP Goals
 
 - Browse official cases with title, date, location, category, summary, tags, and source links.
@@ -28,6 +30,12 @@ Each normalized record should retain:
 `data/sync-metadata.json` records the archive retrieval timestamp and sync result.
 
 Non-official material can be used only as implementation notes or external references, not as case facts.
+
+## License And Attribution
+
+Code is released under the MIT License. See `LICENSE`.
+
+Official government source data, document links, media links, and release metadata remain attributed to their official sources, primarily `https://www.war.gov/ufo/`. This project organizes and links to public official-source materials; it does not claim ownership of those government records.
 
 ## Expected Project Commands
 
