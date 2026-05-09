@@ -1,0 +1,40 @@
+name: Sync WAR UFO releases
+
+on:
+  schedule:
+    - cron: "0 */6 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Sync official WAR UFO records
+        run: npm run sync:war
+
+      - name: Verify
+        run: |
+          npm run lint
+          npm run typecheck
+          npm run build
+
+      - name: Commit data updates
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: "chore(data): sync official UFO release data"
+          file_pattern: data/cases.json data/releases.json data/sync-metadata.json
