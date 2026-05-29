@@ -3,6 +3,7 @@ import "./globals.css";
 import { Navbar } from "@/components/Navbar";
 import { ReleaseBanner } from "@/components/ReleaseBanner";
 import { Analytics } from "@vercel/analytics/next";
+import { SpeedInsights } from "@vercel/speed-insights/next";
 
 export const metadata: Metadata = {
   title: {
@@ -30,6 +31,7 @@ export default function RootLayout({
         <Navbar />
         {children}
         <Analytics />
+        <SpeedInsights />
       </body>
     </html>
   );
