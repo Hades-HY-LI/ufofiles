@@ -36,12 +36,22 @@ Top-level array of normalized case records.
 - `incidentDate`: ISO date of the incident when known, otherwise `null`.
 - `locationName`: human-readable location or official portal label.
 - `latitude` and `longitude`: coordinates when known, otherwise `null`.
-- `type`: controlled display group, such as `document`, `video`, `image`, or `unknown`.
+- `type`: controlled display group: `document`, `video`, `image`, `audio`, or `unknown`.
 - `sourceUrl`: canonical `https://www.war.gov/ufo/` URL or official linked source URL.
 - `mediaUrl`: official file or media URL when available, otherwise `null`.
 - `summary`: neutral description derived from official material.
 - `tags`: lowercase filter terms.
 - `confidence`: provenance label; MVP records should use `official-source`.
+
+Bundle-derived records use the official bundle URL as `sourceUrl`. Individual
+large video entries may have `mediaUrl: null` because the archive records the ZIP
+entry name without downloading and republishing the media file.
+
+When the official CSV export is reachable, row-level records are normalized from
+`https://www.war.gov/Portals/1/Interactive/2026/UFO/uap-data.csv`. The CSV is
+the preferred source for release counts because it includes row-level video and
+audio metadata that is not visible from a plain HTML fetch in server
+environments.
 
 ## `data/releases.json`
 
@@ -127,3 +137,70 @@ Operator-maintained fallback for official file-table rows when the public site b
 ```
 
 Manifest records are normalized into `data/cases.json` by `npm run sync:war`; the app does not read this file directly.
+
+## `data/official-bundles.json`
+
+Official release bundle registry used by the sync fallback path. This file is
+for public bundle URLs confirmed from official `war.gov` release pages. It lets
+maintainers add future release ZIPs without changing the sync script. It can be
+updated manually or by `npm run discover:war-bundles`.
+
+```json
+{
+  "bundles": [
+    {
+      "id": "release-02-video-bundle",
+      "title": "PURSUE Release 02 video bundle",
+      "url": "https://d34w7g4gy10iej.cloudfront.net/uap052226.zip",
+      "releaseDate": "2026-05-22",
+      "releaseTag": "release-02",
+      "type": "video",
+      "mode": "zip-entries",
+      "agency": "Department of War",
+      "summary": "Official PURSUE Release 02 video bundle linked from the public government UAP release portal.",
+      "sourcePageUrl": "https://www.war.gov/ufo/"
+    }
+  ]
+}
+```
+
+Allowed `mode` values:
+
+- `aggregate`: create one case record for the official bundle URL.
+- `zip-entries`: read the ZIP central directory by HTTP range request and create
+  one record per top-level file entry.
+
+## `data/official-release-pages.json`
+
+Official pages scanned by `npm run discover:war-bundles` before sync. The
+discovery script accepts only War.gov pages as scan inputs and only approved
+official bundle hosts as outputs.
+
+```json
+{
+  "pages": [
+    {
+      "url": "https://www.war.gov/ufo/",
+      "kind": "portal"
+    },
+    {
+      "url": "https://www.war.gov/News/Releases/Search/uap/",
+      "kind": "release-search"
+    }
+  ]
+}
+```
+
+Allowed `kind` values:
+
+- `portal`: the public PURSUE file portal.
+- `release-search`: an official War.gov search/list page that can reveal future release articles.
+- `release`: a specific official War.gov release article.
+
+## Derived Relationship Graph
+
+The relationship graph is computed at build time from `data/cases.json`; it is
+not a separate source-of-record file. `lib/relationships.ts` scores file pairs
+using shared release date, agency, media type, tags, and recurring title/summary
+terms. The graph route displays the highest-scoring nodes and edges so users can
+inspect significant clusters without changing the underlying case schema.

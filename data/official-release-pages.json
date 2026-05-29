@@ -1,0 +1,21 @@
+{
+  "notes": "Official War.gov pages that discovery can scan for PURSUE release pages and bundle links. Search pages may add future release pages automatically during the run.",
+  "pages": [
+    {
+      "url": "https://www.war.gov/ufo/",
+      "kind": "portal"
+    },
+    {
+      "url": "https://www.war.gov/News/Releases/Search/uap/",
+      "kind": "release-search"
+    },
+    {
+      "url": "https://www.war.gov/News/Releases/Release/Article/4480582/department-of-war-releases-unidentified-anomalous-phenomena-files-in-historic-t/",
+      "kind": "release"
+    },
+    {
+      "url": "https://www.war.gov/News/Releases/Release/Article/4499305/department-of-war-publishes-second-release-of-unidentified-anomalous-phenomena/",
+      "kind": "release"
+    }
+  ]
+}

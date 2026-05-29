@@ -7,6 +7,7 @@ Testing should prove that the static archive builds, renders, preserves official
 ## Expected Commands
 
 ```bash
+npm run validate:data
 npm run build
 npm run lint
 npm test
@@ -16,6 +17,7 @@ Before release, also run:
 
 ```bash
 npm run sync:war
+npm run validate:data
 npm run build
 ```
 
@@ -25,10 +27,14 @@ npm run build
 - `data/releases.json` is valid JSON.
 - Every case has stable `id`, `title`, `sourceUrl`, `releaseDate`, and `confidence`.
 - Official URLs use the approved `war.gov/ufo` source policy.
+- CSV-derived data preserves document, image, video, and audio media types.
 - Unknown fields use `null` instead of invented values.
 - IDs are unique.
 - Dates are ISO formatted when present.
 - `data/sync-metadata.json` uses an allowed `status` value.
+- `npm run validate:data` confirms release counts, approved source hosts,
+  metadata references, official bundle registries, and relationship graph
+  integrity.
 
 ## Build Tests
 
@@ -59,6 +65,7 @@ Run these before deploy:
 
 ```bash
 npm run sync:war
+npm run validate:data
 npm run build
 npm run lint
 npm test

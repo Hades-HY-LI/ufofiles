@@ -51,7 +51,12 @@ export function getFilterOptions(cases = getCases()) {
   return {
     agencies: [...new Set(cases.map((item) => item.agency))].sort(),
     years: [
-      ...new Set(cases.map((item) => item.incidentDate?.slice(0, 4) ?? "Unknown"))
+      ...new Set(
+        cases.flatMap((item) => [
+          item.incidentDate?.slice(0, 4),
+          item.releaseDate?.slice(0, 4)
+        ]).filter((year): year is string => Boolean(year))
+      )
     ].sort((a, b) => (a === "Unknown" ? 1 : b === "Unknown" ? -1 : b.localeCompare(a))),
     types: [...new Set(cases.map((item) => item.type))].sort(),
     tags: [...new Set(cases.flatMap((item) => item.tags))].sort()

@@ -1,0 +1,29 @@
+{
+  "notes": "Official release bundles linked from war.gov/ufo or official war.gov release pages. The sync script reads this registry when war.gov/ufo blocks live fetches.",
+  "bundles": [
+    {
+      "id": "release-02-document-bundle",
+      "title": "PURSUE Release 02 document bundle",
+      "url": "https://www.war.gov/medialink/ufo/052226/release_02/release_02_document_bundle.zip",
+      "releaseDate": "2026-05-22",
+      "releaseTag": "release-02",
+      "type": "document",
+      "mode": "aggregate",
+      "agency": "Department of War",
+      "summary": "Official PURSUE Release 02 document bundle linked from the public government UAP release portal.",
+      "sourcePageUrl": "https://www.war.gov/ufo/"
+    },
+    {
+      "id": "release-02-video-bundle",
+      "title": "PURSUE Release 02 video bundle",
+      "url": "https://d34w7g4gy10iej.cloudfront.net/uap052226.zip",
+      "releaseDate": "2026-05-22",
+      "releaseTag": "release-02",
+      "type": "video",
+      "mode": "zip-entries",
+      "agency": "Department of War",
+      "summary": "Official PURSUE Release 02 video bundle linked from the public government UAP release portal.",
+      "sourcePageUrl": "https://www.war.gov/ufo/"
+    }
+  ]
+}

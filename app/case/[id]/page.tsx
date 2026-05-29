@@ -1,15 +1,19 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowLeft, ExternalLink, LocateFixed } from "lucide-react";
+import { ArrowLeft, CalendarDays, ExternalLink, GitBranch, LocateFixed } from "lucide-react";
 import { CaseCard } from "@/components/CaseCard";
 import { CaseMetadata } from "@/components/CaseMetadata";
+import { JsonLd } from "@/components/JsonLd";
 import { MediaViewer } from "@/components/MediaViewer";
 import { TagBadge } from "@/components/TagBadge";
 import { getCaseById, getCases, getRelatedCases } from "@/lib/cases";
+import { getOfficialSourceHref } from "@/lib/source-links";
+import { buildBreadcrumbJsonLd, buildCaseJsonLd, createCaseMetadata } from "@/lib/seo";
 
 type CasePageProps = {
   params: Promise<{ id: string }>;
+  searchParams?: Promise<{ from?: string }>;
 };
 
 export async function generateStaticParams() {
@@ -21,23 +25,34 @@ export async function generateMetadata({
 }: CasePageProps): Promise<Metadata> {
   const { id } = await params;
   const caseRecord = getCaseById(id);
-  return {
-    title: caseRecord?.title ?? "Case"
-  };
+  return createCaseMetadata(caseRecord);
 }
 
-export default async function CasePage({ params }: CasePageProps) {
+export default async function CasePage({ params, searchParams }: CasePageProps) {
   const { id } = await params;
+  const query = await searchParams;
   const caseRecord = getCaseById(id);
   if (!caseRecord) notFound();
   const related = getRelatedCases(caseRecord);
+  const sourceHref = getOfficialSourceHref(caseRecord);
+  const backHref = safeExploreHref(query?.from) ?? "/explore";
   const canMap =
     caseRecord.latitude !== null && caseRecord.longitude !== null;
 
   return (
     <main className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
+      <JsonLd
+        data={[
+          buildCaseJsonLd(caseRecord),
+          buildBreadcrumbJsonLd([
+            { name: "UFO Files Archive", path: "/" },
+            { name: "Explore", path: "/explore" },
+            { name: caseRecord.title, path: `/case/${caseRecord.id}` }
+          ])
+        ]}
+      />
       <Link
-        href="/explore"
+        href={backHref}
         className="inline-flex items-center gap-2 text-sm font-semibold text-slate-400 hover:text-white"
       >
         <ArrowLeft size={16} /> Back to Explore
@@ -64,7 +79,7 @@ export default async function CasePage({ params }: CasePageProps) {
           </div>
           <div className="mt-6 flex flex-wrap gap-3">
             <a
-              href={caseRecord.sourceUrl}
+              href={sourceHref}
               target="_blank"
               rel="noreferrer"
               className="inline-flex items-center gap-2 rounded-md bg-cyan-300 px-4 py-3 text-sm font-bold text-slate-950 transition hover:bg-cyan-200"
@@ -78,8 +93,34 @@ export default async function CasePage({ params }: CasePageProps) {
               >
                 Show on the map <LocateFixed size={16} />
               </Link>
-            ) : null}
+            ) : (
+              <Link
+                href="/map"
+                className="inline-flex items-center gap-2 rounded-md border border-amber-300/30 bg-amber-300/10 px-4 py-3 text-sm font-bold text-amber-100 transition hover:bg-amber-300/20"
+              >
+                Listed as unmapped <LocateFixed size={16} />
+              </Link>
+            )}
+            <Link
+              href="/graph"
+              className="inline-flex items-center gap-2 rounded-md border border-fuchsia-300/30 bg-fuchsia-300/10 px-4 py-3 text-sm font-bold text-fuchsia-100 transition hover:bg-fuchsia-300/20"
+            >
+              View graph <GitBranch size={16} />
+            </Link>
+            <Link
+              href="/timeline"
+              className="inline-flex items-center gap-2 rounded-md border border-white/15 bg-white/5 px-4 py-3 text-sm font-bold text-slate-100 transition hover:bg-white/10"
+            >
+              Timeline <CalendarDays size={16} />
+            </Link>
           </div>
+          {caseRecord.tags.includes("bundle") ? (
+            <div className="mt-6 rounded-lg border border-cyan-300/20 bg-cyan-300/10 p-4 text-sm leading-6 text-cyan-50">
+              This record was derived from an official release bundle. The
+              archive preserves the official bundle URL and ZIP entry metadata
+              without republishing large government media files.
+            </div>
+          ) : null}
         </section>
         <aside>
           <MediaViewer caseRecord={caseRecord} />
@@ -103,4 +144,11 @@ export default async function CasePage({ params }: CasePageProps) {
       </section>
     </main>
   );
+}
+
+function safeExploreHref(from: string | undefined) {
+  if (!from) return null;
+  if (!from.startsWith("/explore")) return null;
+  if (from.startsWith("//")) return null;
+  return from;
 }

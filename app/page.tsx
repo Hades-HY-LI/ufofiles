@@ -1,8 +1,10 @@
 import Link from "next/link";
-import { Clock3, Search, MapPinned } from "lucide-react";
+import { Clock3, GitBranch, Search, MapPinned } from "lucide-react";
 import { Hero } from "@/components/Hero";
 import { CaseCard } from "@/components/CaseCard";
+import { JsonLd } from "@/components/JsonLd";
 import { getCases, getFeaturedCases, getSyncMetadata } from "@/lib/cases";
+import { buildDatasetJsonLd, buildItemListJsonLd } from "@/lib/seo";
 
 const featureCards = [
   {
@@ -20,6 +22,13 @@ const featureCards = [
     icon: MapPinned
   },
   {
+    title: "Relationship Graph",
+    description:
+      "Follow strong links between files by release, agency, tags, media type, and recurring case terms.",
+    href: "/graph",
+    icon: GitBranch
+  },
+  {
     title: "Search Archive",
     description:
       "Search titles, agencies, locations, dates, summaries, and tags across official-source records.",
@@ -35,13 +44,24 @@ export default function HomePage() {
 
   return (
     <main>
+      <JsonLd
+        data={[
+          buildDatasetJsonLd(syncMetadata),
+          buildItemListJsonLd({
+            name: "Featured official UFO/UAP records",
+            description: "Featured case records from the official-source UFO Files Archive.",
+            path: "/",
+            cases: featuredCases
+          })
+        ]}
+      />
       <Hero
         featuredCases={featuredCases}
         totalCases={cases.length}
         syncMetadata={syncMetadata}
       />
       <section className="mx-auto max-w-7xl px-4 py-14 sm:px-6 lg:px-8">
-        <div className="grid gap-4 md:grid-cols-3">
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
           {featureCards.map((feature) => {
             const Icon = feature.icon;
             return (

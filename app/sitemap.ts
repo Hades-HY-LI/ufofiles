@@ -1,20 +1,22 @@
 import type { MetadataRoute } from "next";
-import { getCases } from "@/lib/cases";
+import { getCases, getSyncMetadata } from "@/lib/cases";
+import { absoluteUrl } from "@/lib/seo";
 
 export default function sitemap(): MetadataRoute.Sitemap {
-  const baseUrl = "https://ufo-files-archive.vercel.app";
-  const routes = ["", "/explore", "/timeline", "/map", "/about"].map(
+  const syncMetadata = getSyncMetadata();
+  const siteLastModified = new Date(syncMetadata.lastSyncedAt);
+  const routes = ["", "/explore", "/releases", "/timeline", "/graph", "/map", "/about"].map(
     (route) => ({
-      url: `${baseUrl}${route}`,
-      lastModified: new Date()
+      url: absoluteUrl(route || "/"),
+      lastModified: siteLastModified
     })
   );
 
   return [
     ...routes,
     ...getCases().map((caseRecord) => ({
-      url: `${baseUrl}/case/${caseRecord.id}`,
-      lastModified: new Date(caseRecord.releaseDate ?? Date.now())
+      url: absoluteUrl(`/case/${caseRecord.id}`),
+      lastModified: new Date(caseRecord.releaseDate ?? syncMetadata.lastSyncedAt)
     }))
   ];
 }

@@ -37,6 +37,25 @@ Two acceptable MVP models:
 
 The first MVP can use manual sync to keep operations simple.
 
+## Crawler And Agent Surfaces
+
+The canonical public host is `https://ufofiles.info`. Keep `app/robots.ts`,
+`app/sitemap.ts`, metadata, and structured data aligned to that host.
+
+The site exposes static, machine-readable surfaces for search engines, LLMs, and
+other agents:
+
+- `/sitemap.xml`: canonical page discovery, including generated case pages.
+- `/robots.txt`: permits crawling and points at the canonical sitemap.
+- `/llms.txt`: concise retrieval guide, source policy, data URLs, and case links.
+- `/data/archive.json`: combined archive data.
+- `/data/cases.json`: normalized case records.
+- `/data/releases.json`: normalized release records.
+- `/data/sync-metadata.json`: latest sync status and retrieval metadata.
+
+Case pages should keep per-record metadata, canonical URLs, JSON-LD, visible
+source links, and official provenance details in sync with `data/cases.json`.
+
 ## Release Checklist
 
 - `data/cases.json` exists and validates.
@@ -46,6 +65,8 @@ The first MVP can use manual sync to keep operations simple.
 - `npm run lint` succeeds.
 - Tests pass, or documented test gaps are accepted.
 - `/explore`, `/timeline`, `/map`, `/about`, and a case detail page render.
+- `/robots.txt`, `/sitemap.xml`, `/llms.txt`, and `/data/archive.json` return
+  public content with the canonical host.
 - Official source links open to `war.gov/ufo` or approved official files.
 
 ## Rollback

@@ -1,14 +1,23 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { ExternalLink } from "lucide-react";
+import { JsonLd } from "@/components/JsonLd";
+import { getSyncMetadata } from "@/lib/cases";
+import { buildDatasetJsonLd, createPageMetadata } from "@/lib/seo";
 
-export const metadata: Metadata = {
-  title: "About"
-};
+export const metadata: Metadata = createPageMetadata({
+  title: "About",
+  description:
+    "Source policy, limitations, and attribution for the independent UFO Files Archive of official UFO/UAP records.",
+  path: "/about"
+});
 
 export default function AboutPage() {
+  const syncMetadata = getSyncMetadata();
+
   return (
     <main className="mx-auto max-w-4xl px-4 py-12 sm:px-6 lg:px-8">
+      <JsonLd data={buildDatasetJsonLd(syncMetadata)} />
       <p className="text-xs font-semibold uppercase tracking-[0.18em] text-cyan-100">
         About
       </p>

@@ -5,7 +5,7 @@ import { useState } from "react";
 type MediaEmbedProps = {
   src: string;
   title: string;
-  type: "document" | "image" | "video";
+  type: "document" | "image" | "video" | "audio";
   fallback: React.ReactNode;
 };
 
@@ -15,6 +15,18 @@ export function MediaEmbed({ src, title, type, fallback }: MediaEmbedProps) {
   if (failed) return <>{fallback}</>;
 
   if (type === "video") {
+    if (/dvidshub\.net\/video\/embed\//i.test(src)) {
+      return (
+        <iframe
+          src={src}
+          title={title}
+          onError={() => setFailed(true)}
+          allow="fullscreen; encrypted-media"
+          className="aspect-video w-full rounded-lg border border-white/10 bg-black"
+        />
+      );
+    }
+
     return (
       <video
         src={src}
@@ -22,6 +34,28 @@ export function MediaEmbed({ src, title, type, fallback }: MediaEmbedProps) {
         onError={() => setFailed(true)}
         className="w-full rounded-lg border border-white/10 bg-black"
       />
+    );
+  }
+
+  if (type === "audio") {
+    if (/dvidshub\.net\/audio\/embed\//i.test(src)) {
+      return (
+        <iframe
+          src={src}
+          title={title}
+          onError={() => setFailed(true)}
+          className="h-48 w-full rounded-lg border border-white/10 bg-slate-950"
+        />
+      );
+    }
+
+    return (
+      <div className="rounded-lg border border-white/10 bg-slate-950/70 p-5 shadow-panel">
+        <p className="mb-3 line-clamp-2 text-sm font-semibold text-slate-200">
+          {title}
+        </p>
+        <audio src={src} controls onError={() => setFailed(true)} className="w-full" />
+      </div>
     );
   }
 
