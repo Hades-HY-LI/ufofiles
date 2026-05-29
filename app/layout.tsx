@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 import { Navbar } from "@/components/Navbar";
 import { ReleaseBanner } from "@/components/ReleaseBanner";
+import { Analytics } from "@vercel/analytics/next";
 
 export const metadata: Metadata = {
   title: {
@@ -28,6 +29,7 @@ export default function RootLayout({
         <ReleaseBanner />
         <Navbar />
         {children}
+        <Analytics />
       </body>
     </html>
   );
