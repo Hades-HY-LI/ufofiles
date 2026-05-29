@@ -33,9 +33,14 @@ npm test
 Two acceptable MVP models:
 
 - Manual sync: maintainer runs `npm run sync:war`, commits JSON changes, and Vercel deploys from the repo.
-- Scheduled sync: CI runs `npm run sync:war`, opens or commits JSON updates, then Vercel deploys.
+- Scheduled sync: CI runs `npm run sync:war`, opens a reviewable JSON update PR, and Vercel deploys after merge.
 
 The first MVP can use manual sync to keep operations simple.
+
+The configured GitHub Actions workflow runs daily at 09:17 UTC and can also be
+started manually from the Actions tab. It does not commit directly to `main`;
+it opens a pull request for generated data changes so maintainers can inspect
+sync deltas before merging.
 
 ## Crawler And Agent Surfaces
 

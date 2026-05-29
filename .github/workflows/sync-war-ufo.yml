@@ -2,11 +2,12 @@ name: Sync WAR UFO releases
 
 on:
   schedule:
-    - cron: "0 */6 * * *"
+    - cron: "17 9 * * *"
   workflow_dispatch:
 
 permissions:
   contents: write
+  pull-requests: write
 
 jobs:
   sync:
@@ -37,8 +38,27 @@ jobs:
           npm run validate:data
           npm run build
 
-      - name: Commit data updates
-        uses: stefanzweifel/git-auto-commit-action@v5
+      - name: Open data sync pull request
+        uses: peter-evans/create-pull-request@v7
         with:
-          commit_message: "chore(data): sync official UFO release data"
-          file_pattern: data/cases.json data/releases.json data/sync-metadata.json data/official-bundles.json data/official-release-pages.json
+          commit-message: "chore(data): sync official UFO release data"
+          title: "chore(data): sync official UFO release data"
+          body: |
+            Automated sync from official WAR UFO release sources.
+
+            This PR updates only generated data and official-source registry files after running:
+
+            - `npm run discover:war-bundles`
+            - `npm run sync:war`
+            - `npm run lint`
+            - `npm run typecheck`
+            - `npm run validate:data`
+            - `npm run build`
+          branch: automated/war-ufo-sync
+          delete-branch: true
+          add-paths: |
+            data/cases.json
+            data/releases.json
+            data/sync-metadata.json
+            data/official-bundles.json
+            data/official-release-pages.json
