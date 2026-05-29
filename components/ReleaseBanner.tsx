@@ -35,10 +35,10 @@ export function ReleaseBanner() {
           </span>
         </div>
         <Link
-          href="/explore?sort=latest-release"
+          href="/releases"
           className="inline-flex items-center gap-1 font-medium text-white hover:text-cyan-100"
         >
-          View latest <ExternalLink size={14} />
+          View release tracker <ExternalLink size={14} />
         </Link>
       </div>
     </div>

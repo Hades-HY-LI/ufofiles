@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-export const mediaTypes = ["document", "image", "video", "unknown"] as const;
+export const mediaTypes = ["document", "image", "video", "audio", "unknown"] as const;
 export type MediaType = (typeof mediaTypes)[number];
 
 export const CaseRecordSchema = z.object({

@@ -5,6 +5,7 @@ export function labelMediaType(type: MediaType) {
     document: "Document",
     image: "Image",
     video: "Video",
+    audio: "Audio",
     unknown: "Unknown"
   };
   return labels[type];

@@ -3,15 +3,18 @@ import { CalendarDays, ExternalLink, LocateFixed, MapPin } from "lucide-react";
 import type { CaseRecord } from "@/lib/types";
 import { formatDate } from "@/lib/dates";
 import { labelMediaType } from "@/lib/filters";
+import { getOfficialSourceHref } from "@/lib/source-links";
 import { TagBadge } from "@/components/TagBadge";
 
 type CaseCardProps = {
   caseRecord: CaseRecord;
+  caseHref?: string;
 };
 
-export function CaseCard({ caseRecord }: CaseCardProps) {
+export function CaseCard({ caseRecord, caseHref = `/case/${caseRecord.id}` }: CaseCardProps) {
   const canMap =
     caseRecord.latitude !== null && caseRecord.longitude !== null;
+  const sourceHref = getOfficialSourceHref(caseRecord);
 
   return (
     <article className="group flex h-full flex-col rounded-lg border border-white/10 bg-slate-950/60 p-5 shadow-panel transition hover:-translate-y-0.5 hover:border-cyan-300/40 hover:bg-slate-900/82">
@@ -24,7 +27,7 @@ export function CaseCard({ caseRecord }: CaseCardProps) {
         </span>
       </div>
       <h3 className="mt-4 line-clamp-2 font-[var(--font-space)] text-lg font-semibold leading-6 text-white">
-        {caseRecord.title}
+        <Link href={caseHref}>{caseRecord.title}</Link>
       </h3>
       <p className="mt-3 line-clamp-3 text-sm leading-6 text-slate-400">
         {caseRecord.summary}
@@ -50,7 +53,7 @@ export function CaseCard({ caseRecord }: CaseCardProps) {
       </div>
       <div className="mt-auto flex flex-wrap items-center gap-2 pt-5">
         <Link
-          href={`/case/${caseRecord.id}`}
+          href={caseHref}
           className="rounded-md bg-cyan-300 px-3 py-2 text-sm font-semibold text-slate-950 transition hover:bg-cyan-200"
         >
           View case
@@ -64,7 +67,7 @@ export function CaseCard({ caseRecord }: CaseCardProps) {
           </Link>
         ) : null}
         <a
-          href={caseRecord.sourceUrl}
+          href={sourceHref}
           target="_blank"
           rel="noreferrer"
           className="ml-auto inline-flex items-center gap-1 text-sm text-slate-400 transition hover:text-white"

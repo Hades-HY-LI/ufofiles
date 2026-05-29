@@ -1,5 +1,6 @@
-import { ExternalLink, FileText, Image as ImageIcon, Video } from "lucide-react";
+import { ExternalLink, FileText, Image as ImageIcon, Video, Volume2 } from "lucide-react";
 import type { CaseRecord } from "@/lib/types";
+import { getOfficialMediaHref, getOfficialSourceHref } from "@/lib/source-links";
 import { MediaEmbed } from "@/components/MediaEmbed";
 
 type MediaViewerProps = {
@@ -55,6 +56,22 @@ export function MediaViewer({ caseRecord }: MediaViewerProps) {
     );
   }
 
+  if (caseRecord.mediaUrl && caseRecord.type === "audio") {
+    return (
+      <MediaEmbed
+        src={caseRecord.mediaUrl}
+        title={caseRecord.title}
+        type="audio"
+        fallback={
+          <UnavailableMediaPanel
+            caseRecord={caseRecord}
+            message="The official audio URL is recorded, but the source server did not allow this browser to embed it."
+          />
+        }
+      />
+    );
+  }
+
   return <UnavailableMediaPanel caseRecord={caseRecord} />;
 }
 
@@ -65,9 +82,13 @@ function UnavailableMediaPanel({
   caseRecord: CaseRecord;
   message?: string;
 }) {
+  const sourceHref = getOfficialSourceHref(caseRecord);
+  const mediaHref = getOfficialMediaHref(caseRecord);
   const Icon =
     caseRecord.type === "video"
       ? Video
+      : caseRecord.type === "audio"
+        ? Volume2
       : caseRecord.type === "image"
         ? ImageIcon
         : FileText;
@@ -83,9 +104,9 @@ function UnavailableMediaPanel({
       <p className="mx-auto mt-3 max-w-md text-sm leading-6 text-slate-400">
         {message}
       </p>
-      {caseRecord.mediaUrl ? (
+      {mediaHref ? (
         <a
-          href={caseRecord.mediaUrl}
+          href={mediaHref}
           target="_blank"
           rel="noreferrer"
           className="mt-6 mr-2 inline-flex items-center gap-2 rounded-md border border-white/15 bg-white/5 px-4 py-2 text-sm font-bold text-white transition hover:bg-white/10"
@@ -94,7 +115,7 @@ function UnavailableMediaPanel({
         </a>
       ) : null}
       <a
-        href={caseRecord.sourceUrl}
+        href={sourceHref}
         target="_blank"
         rel="noreferrer"
         className="mt-6 inline-flex items-center gap-2 rounded-md bg-cyan-300 px-4 py-2 text-sm font-bold text-slate-950 transition hover:bg-cyan-200"

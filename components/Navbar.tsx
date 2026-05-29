@@ -1,9 +1,11 @@
 import Link from "next/link";
-import { RadioTower } from "lucide-react";
+import Image from "next/image";
 
 const links = [
   { href: "/explore", label: "Explore" },
+  { href: "/releases", label: "Releases" },
   { href: "/timeline", label: "Timeline" },
+  { href: "/graph", label: "Graph" },
   { href: "/map", label: "Map" },
   { href: "/about", label: "About" }
 ];
@@ -13,9 +15,14 @@ export function Navbar() {
     <header className="sticky top-0 z-40 border-b border-white/10 bg-archive-void/82 backdrop-blur-xl">
       <nav className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-4 sm:px-6 lg:px-8">
         <Link href="/" className="flex min-w-0 items-center gap-3">
-          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-cyan-300/25 bg-cyan-300/10 text-cyan-100 shadow-glow">
-            <RadioTower size={20} />
-          </span>
+          <Image
+            src="/logo-mark.svg"
+            alt=""
+            aria-hidden="true"
+            width={40}
+            height={40}
+            className="h-10 w-10 shrink-0 rounded-lg border border-cyan-300/25 bg-cyan-300/10 shadow-glow"
+          />
           <span className="truncate font-[var(--font-space)] text-lg font-semibold tracking-wide">
             UFO Files Archive
           </span>

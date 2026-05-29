@@ -8,7 +8,7 @@ The approved direction is dark archival: serious, legible, dense, and restrained
 
 - Source-forward: official URLs, dates, and retrieval metadata are visible.
 - Dense but calm: prioritize scanability and comparison.
-- Minimal decoration: use layout, typography, and subtle borders instead of effects.
+- Minimal decoration: use layout, typography, subtle borders, and data-driven interaction instead of effects.
 - Neutral language: avoid sensational labels.
 - Mobile complete: provenance and filters must remain available on small screens.
 
@@ -53,6 +53,7 @@ Avoid purple-blue gradients, glowing orbs, heavy neon, beige archival paper them
 - Filter controls: inputs, checkboxes, segmented controls, and menus.
 - Timeline item: year/date, title, location, category, source indicator.
 - Map fallback list: cases with missing or approximate coordinates remain discoverable.
+- Relationship graph: significant nodes, weighted links, clear selected state, and a readable side panel explaining why files are related.
 
 ## Interaction
 
@@ -60,4 +61,3 @@ Avoid purple-blue gradients, glowing orbs, heavy neon, beige archival paper them
 - Hover states should be subtle but clear.
 - Status must not rely on color alone.
 - Loading and empty states should be plain and factual.
-

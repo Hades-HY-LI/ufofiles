@@ -41,10 +41,13 @@ export function filterCases(cases: CaseRecord[], filters: CaseFilters) {
   }
 
   return current.filter((item) => {
-    const year = item.incidentDate?.slice(0, 4) ?? "Unknown";
+    const years = [
+      item.incidentDate?.slice(0, 4),
+      item.releaseDate?.slice(0, 4)
+    ].filter(Boolean);
     return (
       (filters.agency === "all" || item.agency === filters.agency) &&
-      (filters.year === "all" || year === filters.year) &&
+      (filters.year === "all" || years.includes(filters.year)) &&
       (filters.type === "all" || item.type === filters.type) &&
       (filters.tag === "all" || item.tags.includes(filters.tag))
     );

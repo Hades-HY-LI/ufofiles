@@ -24,6 +24,9 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Discover official WAR UFO bundles
+        run: npm run discover:war-bundles
+
       - name: Sync official WAR UFO records
         run: npm run sync:war
 
@@ -31,10 +34,11 @@ jobs:
         run: |
           npm run lint
           npm run typecheck
+          npm run validate:data
           npm run build
 
       - name: Commit data updates
         uses: stefanzweifel/git-auto-commit-action@v5
         with:
           commit_message: "chore(data): sync official UFO release data"
-          file_pattern: data/cases.json data/releases.json data/sync-metadata.json
+          file_pattern: data/cases.json data/releases.json data/sync-metadata.json data/official-bundles.json data/official-release-pages.json

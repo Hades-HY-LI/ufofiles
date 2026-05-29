@@ -9,7 +9,7 @@ This is an independent fan archive and is not affiliated with the U.S. governmen
 ## MVP Goals
 
 - Browse official cases with title, date, location, category, summary, tags, and source links.
-- Explore records by list, map, timeline, and case detail pages.
+- Explore records by list, release tracker, map, timeline, relationship graph, and case detail pages.
 - Show sync freshness through a visible banner when data is stale, incomplete, or the official source cannot be reached.
 - Deploy cleanly to Vercel as a static JSON-backed app.
 
@@ -44,16 +44,20 @@ When the Next.js package is present, the project should expose:
 ```bash
 npm install
 npm run dev
+npm run discover:war-bundles
 npm run sync:war
 npm run build
 npm run lint
+npm run validate:data
 npm test
 ```
 
 Recommended local flow:
 
 ```bash
+npm run discover:war-bundles
 npm run sync:war
+npm run validate:data
 npm run build
 npm run dev
 ```
@@ -65,7 +69,19 @@ The app should read static JSON from `data/` at build time. The minimum expected
 - `data/cases.json`: normalized case list.
 - `data/releases.json`: official PURSUE release records.
 - `data/sync-metadata.json`: last sync result and banner inputs.
+- `https://www.war.gov/Portals/1/Interactive/2026/UFO/uap-data.csv`: primary official data export used by sync when reachable.
 - `data/war-ufo-manifest.json`: official URL fallback for cases where `war.gov/ufo` blocks server-side fetches.
+- `data/official-release-pages.json`: official War.gov pages scanned for release and bundle discovery.
+- `data/official-bundles.json`: official release bundle registry for fallback ZIP metadata ingestion.
+
+The sync script first reads War.gov's official CSV export, which includes
+documents, images, videos, and audio records. The discovery step separately
+scans the official portal, official War.gov release search, and known official
+release pages for ZIP bundle links, then updates `data/official-bundles.json`.
+The sync script reads that registry when Akamai blocks direct page or CSV
+fetches. For reachable ZIPs, it can list the central directory by HTTP range
+request and normalize official bundle entries without downloading
+multi-gigabyte media archives.
 
 See `docs/DATA_MODEL.md` for the field contract.
 
@@ -73,9 +89,11 @@ See `docs/DATA_MODEL.md` for the field contract.
 
 - `docs/PRODUCT_SPEC.md`: MVP product behavior.
 - `docs/DESIGN_DOC.md`: app architecture and routes.
+- `docs/DESIGN.md`: current UX direction and interaction roadmap.
 - `docs/DATA_MODEL.md`: JSON data schema.
 - `docs/SYNC_RUNBOOK.md`: official-source sync behavior.
 - `docs/DESIGN_SYSTEM.md`: approved dark archival UI direction.
+- `docs/IDEAS.md`: product ideas that preserve the official-source policy.
 - `docs/DEPLOYMENT.md`: Vercel deployment notes.
 - `docs/TEST_PLAN.md`: verification plan.
 - `docs/TOOLS_AND_SKILLS.md`: project tools and maintainer workflow.

@@ -2,22 +2,44 @@ import type { Metadata } from "next";
 import "./globals.css";
 import { Navbar } from "@/components/Navbar";
 import { ReleaseBanner } from "@/components/ReleaseBanner";
+import { siteConfig } from "@/lib/seo";
 import { Analytics } from "@vercel/analytics/next";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 
 export const metadata: Metadata = {
   title: {
-    default: "UFO Files Archive",
-    template: "%s | UFO Files Archive"
+    default: siteConfig.name,
+    template: `%s | ${siteConfig.name}`
   },
-  description:
-    "A non-commercial fan archive for browsing official UFO/UAP releases through search, timeline, map, and case cards.",
-  metadataBase: new URL("https://ufo-files-archive.vercel.app"),
+  description: siteConfig.description,
+  metadataBase: new URL(siteConfig.url),
+  alternates: {
+    canonical: "/"
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true
+    }
+  },
+  icons: {
+    icon: "/logo-mark.svg",
+    shortcut: "/logo-mark.svg",
+    apple: "/logo-mark.svg"
+  },
   openGraph: {
-    title: "UFO Files Archive",
-    description:
-      "Explore official UFO/UAP releases through timeline, map, search, and visual case cards.",
+    title: siteConfig.name,
+    description: siteConfig.description,
+    url: siteConfig.url,
+    siteName: siteConfig.name,
     type: "website"
+  },
+  twitter: {
+    card: "summary",
+    title: siteConfig.name,
+    description: siteConfig.description
   }
 };
 

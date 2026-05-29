@@ -80,7 +80,7 @@ export function SearchFilters({
         onChange={(agency) => update({ agency })}
       />
       <FilterSelect
-        label="Incident year"
+        label="Year"
         value={filters.year}
         options={options.years}
         onChange={(year) => update({ year })}

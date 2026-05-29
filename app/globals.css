@@ -14,10 +14,6 @@
   box-sizing: border-box;
 }
 
-html {
-  scroll-behavior: smooth;
-}
-
 body {
   margin: 0;
   font-family: var(--font-inter);
@@ -46,23 +42,18 @@ a {
   text-decoration: none;
 }
 
-.leaflet-container {
-  background: #08111f;
-  font-family: inherit;
-}
-
-.leaflet-popup-content-wrapper,
-.leaflet-popup-tip {
-  background: #0c1626;
-  color: #eff6ff;
-  border: 1px solid rgba(70, 217, 255, 0.26);
-}
-
-.leaflet-control-attribution {
-  background: rgba(5, 8, 18, 0.78) !important;
-  color: #94a3b8 !important;
-}
-
 .ufo-scrollbar {
   scrollbar-color: rgba(70, 217, 255, 0.45) rgba(12, 22, 38, 0.72);
+}
+
+.relationship-weight-bridge,
+.relationship-weight-tooltip {
+  display: none;
+}
+
+.relationship-weight-info:hover .relationship-weight-bridge,
+.relationship-weight-info:hover .relationship-weight-tooltip,
+.relationship-weight-info:focus-within .relationship-weight-bridge,
+.relationship-weight-info:focus-within .relationship-weight-tooltip {
+  display: block;
 }
