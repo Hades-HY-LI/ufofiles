@@ -65,6 +65,29 @@ export default function AboutPage() {
           Start exploring
         </Link>
       </div>
+      <section
+        id="license-and-attribution"
+        className="mt-10 rounded-lg border border-white/10 bg-slate-950/60 p-6"
+      >
+        <h2 className="font-[var(--font-space)] text-2xl font-semibold text-white">
+          License and attribution
+        </h2>
+        <div className="mt-4 space-y-4 text-sm leading-6 text-slate-400">
+          <p>
+            The project code is released under the MIT License in the public
+            repository license file.
+          </p>
+          <p>
+            Official government source data, document links, media links, and
+            release metadata remain attributed to their official sources,
+            primarily the public PURSUE materials at war.gov.
+          </p>
+          <p>
+            UFO Files Archive organizes and links to public official-source
+            materials. It does not claim ownership of those government records.
+          </p>
+        </div>
+      </section>
     </main>
   );
 }

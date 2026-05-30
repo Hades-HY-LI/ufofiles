@@ -100,8 +100,14 @@ export function buildDatasetJsonLd(syncMetadata: SyncMetadata) {
     description: siteConfig.description,
     url: siteConfig.url,
     inLanguage: "en",
+    isAccessibleForFree: true,
     isBasedOn: siteConfig.officialSourceUrl,
     sameAs: siteConfig.officialSourceUrl,
+    license: {
+      "@type": "CreativeWork",
+      name: "UFO Files Archive license and attribution",
+      url: absoluteUrl("/about#license-and-attribution")
+    },
     dateModified: syncMetadata.lastSyncedAt,
     keywords: ["UFO", "UAP", "official records", "government records", "archive"],
     distribution: [
