@@ -6,6 +6,7 @@ import type { CaseRecord, MediaType, ReleaseRecord, SyncMetadata } from "../lib/
 
 const SOURCE_URL = "https://www.war.gov/ufo/";
 const CSV_URL = "https://www.war.gov/Portals/1/Interactive/2026/UFO/uap-data.csv";
+const FORCE_FALLBACK = process.env.WAR_UFO_FORCE_FALLBACK === "1";
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const root = path.resolve(__dirname, "..");
 
@@ -116,8 +117,11 @@ async function main() {
       );
     }
   }
-  const mergedCases = mergeCases(previousCases, discoveries);
-  const releases = buildReleases(previousReleases, discoveries, mergedCases);
+  const mergedCases =
+    status === "partial"
+      ? mergePartialFallbackCases(previousCases, discoveries)
+      : mergeCases(previousCases, discoveries);
+  const releases = buildReleases(previousReleases, mergedCases);
   const computedMetadata = buildMetadata(previousCases, mergedCases, status);
   let metadata = computedMetadata;
   let preservedMetadata = false;
@@ -127,7 +131,7 @@ async function main() {
     !releaseChanged &&
     computedMetadata.newRecordCount === 0 &&
     computedMetadata.changedRecordCount === 0 &&
-    previousMetadata.status === status
+    (previousMetadata.status === status || status === "partial")
   ) {
     metadata = previousMetadata;
     preservedMetadata = true;
@@ -148,6 +152,9 @@ async function main() {
 }
 
 async function fetchOfficialCsv() {
+  if (FORCE_FALLBACK) {
+    throw new Error("WAR_UFO_FORCE_FALLBACK requested");
+  }
   const response = await fetch(CSV_URL, {
     headers: {
       accept: "text/csv,application/octet-stream,text/plain"
@@ -160,6 +167,9 @@ async function fetchOfficialCsv() {
 }
 
 async function fetchSource() {
+  if (FORCE_FALLBACK) {
+    throw new Error("WAR_UFO_FORCE_FALLBACK requested");
+  }
   const response = await fetch(SOURCE_URL, {
     headers: {
       "user-agent":
@@ -322,66 +332,96 @@ function mergeCases(previousCases: CaseRecord[], discoveries: Discovery[]) {
   for (const discovery of discoveries) {
     const id = stableId(discovery);
     const previous = previousById.get(id);
-    const coordinates = coordinatesForLocation(discovery.locationName);
-    merged.set(id, {
-      id,
-      title: discovery.title || previous?.title || "Official UAP record",
-      agency: discovery.agency || previous?.agency || "Unknown agency",
-      releaseDate: discovery.releaseDate ?? previous?.releaseDate ?? null,
-      incidentDate: discovery.incidentDate ?? previous?.incidentDate ?? null,
-      locationName:
-        discovery.locationName ?? previous?.locationName ?? "Unknown location",
-      latitude: discovery.latitude ?? previous?.latitude ?? coordinates?.latitude ?? null,
-      longitude:
-        discovery.longitude ?? previous?.longitude ?? coordinates?.longitude ?? null,
-      type: discovery.type || previous?.type || "unknown",
-      sourceUrl: discovery.sourceUrl || previous?.sourceUrl || SOURCE_URL,
-      mediaUrl:
-        discovery.mediaUrl ??
-        (discovery.type === "document" && !discovery.tags?.includes("bundle")
-          ? discovery.sourceUrl
-          : null) ??
-        previous?.mediaUrl ??
-        null,
-      summary: discovery.summary || previous?.summary || "Official UAP-related record.",
-      tags: mergeTags(previous?.tags ?? [], [
-        "official",
-        "uap",
-        "pursue",
-        discovery.type,
-        ...(discovery.tags ?? [])
-      ]),
-      confidence: previous?.confidence ?? "official-source"
-    });
+    merged.set(id, caseFromDiscovery(discovery, previous));
   }
 
-  return [...merged.values()].sort((a, b) =>
-    (b.releaseDate ?? "").localeCompare(a.releaseDate ?? "")
-  );
+  return sortCases([...merged.values()]);
 }
 
-function buildReleases(
-  previousReleases: ReleaseRecord[],
-  discoveries: Discovery[],
-  cases: CaseRecord[]
-) {
-  const map = new Map(previousReleases.map((item) => [item.id, item]));
-  const grouped = new Map<string, Discovery[]>();
+function mergePartialFallbackCases(previousCases: CaseRecord[], discoveries: Discovery[]) {
+  const merged = new Map(previousCases.map((item) => [item.id, item]));
+  const representedReleaseDates = new Set(previousCases.map((item) => item.releaseDate));
+  let skippedFallbackRecords = 0;
+
   for (const discovery of discoveries) {
-    const releaseTag =
-      discovery.tags?.find((tag) => /^release-\d+$/i.test(tag)) ??
-      releaseTagFromDate(discovery.releaseDate);
-    grouped.set(releaseTag, [...(grouped.get(releaseTag) ?? []), discovery]);
+    const id = stableId(discovery);
+    if (merged.has(id)) continue;
+
+    if (representedReleaseDates.has(discovery.releaseDate ?? null)) {
+      skippedFallbackRecords += 1;
+      continue;
+    }
+
+    merged.set(id, caseFromDiscovery(discovery));
   }
 
-  for (const [releaseTag, releaseDiscoveries] of grouped) {
+  if (skippedFallbackRecords) {
+    console.warn(
+      `Preserved existing row-level records and skipped ${skippedFallbackRecords} lower-detail fallback record(s).`
+    );
+  }
+
+  return sortCases([...merged.values()]);
+}
+
+function caseFromDiscovery(discovery: Discovery, previous?: CaseRecord): CaseRecord {
+  const id = stableId(discovery);
+  const coordinates = coordinatesForLocation(discovery.locationName);
+
+  return {
+    id,
+    title: discovery.title || previous?.title || "Official UAP record",
+    agency: discovery.agency || previous?.agency || "Unknown agency",
+    releaseDate: discovery.releaseDate ?? previous?.releaseDate ?? null,
+    incidentDate: discovery.incidentDate ?? previous?.incidentDate ?? null,
+    locationName:
+      discovery.locationName ?? previous?.locationName ?? "Unknown location",
+    latitude: discovery.latitude ?? previous?.latitude ?? coordinates?.latitude ?? null,
+    longitude:
+      discovery.longitude ?? previous?.longitude ?? coordinates?.longitude ?? null,
+    type: discovery.type || previous?.type || "unknown",
+    sourceUrl: discovery.sourceUrl || previous?.sourceUrl || SOURCE_URL,
+    mediaUrl:
+      discovery.mediaUrl ??
+      (discovery.type === "document" && !discovery.tags?.includes("bundle")
+        ? discovery.sourceUrl
+        : null) ??
+      previous?.mediaUrl ??
+      null,
+    summary: discovery.summary || previous?.summary || "Official UAP-related record.",
+    tags: mergeTags(previous?.tags ?? [], [
+      "official",
+      "uap",
+      "pursue",
+      discovery.type,
+      ...(discovery.tags ?? [])
+    ]),
+    confidence: previous?.confidence ?? "official-source"
+  };
+}
+
+function sortCases(cases: CaseRecord[]) {
+  return cases.sort((a, b) => (b.releaseDate ?? "").localeCompare(a.releaseDate ?? ""));
+}
+
+function buildReleases(previousReleases: ReleaseRecord[], cases: CaseRecord[]) {
+  const map = new Map(previousReleases.map((item) => [item.id, item]));
+  const grouped = new Map<string, CaseRecord[]>();
+  for (const caseRecord of cases) {
+    const releaseTag =
+      caseRecord.tags.find((tag) => /^release-\d+$/i.test(tag)) ??
+      releaseTagFromDate(caseRecord.releaseDate);
+    grouped.set(releaseTag, [...(grouped.get(releaseTag) ?? []), caseRecord]);
+  }
+
+  for (const [releaseTag, releaseCases] of grouped) {
     const releaseNumber = releaseTag.match(/\d+/)?.[0] ?? "01";
     const release: ReleaseRecord = {
       id: `pursue-${releaseTag}`,
       title: `PURSUE Release ${releaseNumber.padStart(2, "0")}`,
-      releaseDate: releaseDiscoveries[0]?.releaseDate ?? null,
+      releaseDate: releaseCases[0]?.releaseDate ?? null,
       sourceUrl: SOURCE_URL,
-      fileCount: releaseDiscoveries.length,
+      fileCount: releaseCases.length,
       notes:
         "Automated sync record for official files detected on the PURSUE portal and official linked bundles."
     };

@@ -78,8 +78,14 @@ The manifest must contain only official `war.gov` URLs, official DVIDS video URL
 Fallback sync behavior:
 
 - CSV or live fetch succeeds: normalize discovered official records and mark status `fresh`.
-- Live fetch fails but manifest or official linked bundles have records: normalize those records and mark status `partial`.
+- Live fetch fails but manifest or official linked bundles have records: normalize fallback records only for release dates not already represented in `data/cases.json`, then mark status `partial` only when the archive actually changes.
 - Live fetch fails and manifest is missing/empty: preserve existing records and mark status `failed`.
+
+Partial fallback must not replace existing row-level CSV records with lower-detail
+bundle or manifest records. If an existing release date is already represented,
+the sync preserves the richer existing records and skips fallback rows for that
+release date. Maintainers can test this path locally with
+`WAR_UFO_FORCE_FALLBACK=1 npm run sync:war`.
 
 Release 02 currently uses this fallback path because `war.gov/ufo` and the
 document bundle return `403` to server-side fetches, while the official linked
@@ -95,8 +101,9 @@ that allow range reads; otherwise use `mode: "aggregate"` so the archive tracks
 the official bundle as a single source record.
 
 No-op runs should not create timestamp-only commits. If sync discovers no new or
-changed cases, no release-count changes, and no status change, preserve the
-previous metadata file so scheduled GitHub Actions stay quiet.
+changed cases and no release-count changes, preserve the previous metadata file
+so scheduled GitHub Actions stay quiet, including transient partial fallback
+runs that only confirm already-represented releases.
 
 ## Freshness Policy
 
