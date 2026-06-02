@@ -1,20 +1,29 @@
+import type { ReactNode } from "react";
 import type { CaseRecord } from "@/lib/types";
 import { formatDate } from "@/lib/dates";
 import { labelMediaType } from "@/lib/filters";
+import { getOfficialMediaHref, getOfficialSourceHref } from "@/lib/source-links";
 
 type CaseMetadataProps = {
   caseRecord: CaseRecord;
 };
 
 export function CaseMetadata({ caseRecord }: CaseMetadataProps) {
-  const rows = [
+  const sourceHref = getOfficialSourceHref(caseRecord);
+  const mediaHref = getOfficialMediaHref(caseRecord);
+  const rows: Array<[string, ReactNode]> = [
     ["Agency", caseRecord.agency],
     ["Incident date", formatDate(caseRecord.incidentDate)],
     ["Release date", formatDate(caseRecord.releaseDate)],
     ["Location", caseRecord.locationName],
     ["Media type", labelMediaType(caseRecord.type)],
     ["Coordinates", coordinates(caseRecord)],
-    ["Confidence", caseRecord.confidence]
+    ["Confidence", caseRecord.confidence],
+    ["Official source", <MetadataLink key="source" href={sourceHref} />],
+    ...(mediaHref ? [[
+      "Official media",
+      <MetadataLink key="media" href={mediaHref} />
+    ] satisfies [string, ReactNode]] : [])
   ];
 
   return (
@@ -29,6 +38,28 @@ export function CaseMetadata({ caseRecord }: CaseMetadataProps) {
       ))}
     </dl>
   );
+}
+
+function MetadataLink({ href }: { href: string }) {
+  return (
+    <a
+      href={href}
+      target="_blank"
+      rel="noreferrer"
+      className="break-words text-cyan-100 underline decoration-cyan-300/40 underline-offset-4 hover:text-white"
+    >
+      {displayUrl(href)}
+    </a>
+  );
+}
+
+function displayUrl(href: string) {
+  try {
+    const parsed = new URL(href);
+    return `${parsed.hostname}${parsed.pathname}`;
+  } catch {
+    return href;
+  }
 }
 
 function coordinates(caseRecord: CaseRecord) {

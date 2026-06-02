@@ -1,12 +1,13 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { notFound } from "next/navigation";
+import { notFound, permanentRedirect } from "next/navigation";
 import { ArrowLeft, CalendarDays, ExternalLink, GitBranch, LocateFixed } from "lucide-react";
 import { CaseCard } from "@/components/CaseCard";
 import { CaseMetadata } from "@/components/CaseMetadata";
 import { JsonLd } from "@/components/JsonLd";
 import { MediaViewer } from "@/components/MediaViewer";
 import { TagBadge } from "@/components/TagBadge";
+import { getCanonicalCaseIdForAlias } from "@/lib/case-aliases";
 import { getCaseById, getCases, getRelatedCases } from "@/lib/cases";
 import { getOfficialSourceHref } from "@/lib/source-links";
 import { buildBreadcrumbJsonLd, buildCaseJsonLd, createCaseMetadata } from "@/lib/seo";
@@ -24,13 +25,16 @@ export async function generateMetadata({
   params
 }: CasePageProps): Promise<Metadata> {
   const { id } = await params;
-  const caseRecord = getCaseById(id);
+  const caseRecord = getCaseById(id) ?? getCaseByAlias(id);
   return createCaseMetadata(caseRecord);
 }
 
 export default async function CasePage({ params, searchParams }: CasePageProps) {
   const { id } = await params;
   const query = await searchParams;
+  const canonicalId = getCanonicalCaseIdForAlias(id);
+  if (canonicalId) permanentRedirect(`/case/${canonicalId}`);
+
   const caseRecord = getCaseById(id);
   if (!caseRecord) notFound();
   const related = getRelatedCases(caseRecord);
@@ -151,4 +155,9 @@ function safeExploreHref(from: string | undefined) {
   if (!from.startsWith("/explore")) return null;
   if (from.startsWith("//")) return null;
   return from;
+}
+
+function getCaseByAlias(id: string) {
+  const canonicalId = getCanonicalCaseIdForAlias(id);
+  return canonicalId ? getCaseById(canonicalId) : null;
 }
