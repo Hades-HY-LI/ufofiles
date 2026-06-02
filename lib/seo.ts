@@ -2,7 +2,11 @@ import type { Metadata } from "next";
 import type { CaseRecord, SyncMetadata } from "@/lib/types";
 import { formatDate } from "@/lib/dates";
 import { labelMediaType } from "@/lib/filters";
-import { getOfficialSourceHref } from "@/lib/source-links";
+import {
+  getOfficialMediaHref,
+  getOfficialSourceHref,
+  publicOfficialMediaUrl
+} from "@/lib/source-links";
 
 export const siteConfig = {
   name: "UFO Files Archive",
@@ -127,6 +131,7 @@ export function buildDatasetJsonLd(syncMetadata: SyncMetadata) {
 export function buildCaseJsonLd(caseRecord: CaseRecord) {
   const pageUrl = absoluteUrl(`/case/${caseRecord.id}`);
   const sourceHref = getOfficialSourceHref(caseRecord);
+  const mediaHref = getOfficialMediaHref(caseRecord);
   const contentLocation =
     caseRecord.locationName || caseRecord.latitude !== null || caseRecord.longitude !== null
       ? {
@@ -150,18 +155,26 @@ export function buildCaseJsonLd(caseRecord: CaseRecord) {
     name: caseRecord.title,
     description: caseRecord.summary,
     url: pageUrl,
+    mainEntityOfPage: {
+      "@type": "WebPage",
+      "@id": pageUrl
+    },
     sameAs: sourceHref,
     isBasedOn: stripUndefined({
       "@type": "CreativeWork",
       name: "Official source record",
       url: sourceHref,
-      associatedMedia: caseRecord.mediaUrl
-        ? {
-            "@type": "MediaObject",
-            contentUrl: caseRecord.mediaUrl
-          }
-        : undefined
+      associatedMedia: mediaHref ? mediaObjectForCase(caseRecord, mediaHref) : undefined
     }),
+    contentUrl:
+      mediaHref && caseRecord.type !== "video" && caseRecord.type !== "audio"
+        ? mediaHref
+        : undefined,
+    embedUrl:
+      caseRecord.mediaUrl && /dvidshub\.net\/(video|audio)\/embed\//i.test(caseRecord.mediaUrl)
+        ? caseRecord.mediaUrl
+        : undefined,
+    encodingFormat: mediaHref ? encodingFormatForCase(caseRecord, mediaHref) : undefined,
     datePublished: caseRecord.releaseDate ?? undefined,
     temporalCoverage: caseRecord.incidentDate ?? undefined,
     contentLocation,
@@ -233,6 +246,43 @@ function schemaTypeForCase(caseRecord: CaseRecord) {
   if (caseRecord.type === "audio") return "AudioObject";
   if (caseRecord.type === "document") return "DigitalDocument";
   return "CreativeWork";
+}
+
+function mediaObjectForCase(caseRecord: CaseRecord, mediaHref: string) {
+  const base = {
+    "@type": schemaTypeForCase(caseRecord),
+    name: caseRecord.title,
+    description: caseRecord.summary,
+    encodingFormat: encodingFormatForCase(caseRecord, mediaHref)
+  };
+
+  if (/dvidshub\.net\/(video|audio)\/embed\//i.test(caseRecord.mediaUrl ?? "")) {
+    return stripUndefined({
+      ...base,
+      embedUrl: caseRecord.mediaUrl,
+      contentUrl: publicOfficialMediaUrl(caseRecord.mediaUrl ?? mediaHref)
+    });
+  }
+
+  return stripUndefined({
+    ...base,
+    contentUrl: mediaHref
+  });
+}
+
+function encodingFormatForCase(caseRecord: CaseRecord, mediaHref: string) {
+  if (caseRecord.type === "document") return "application/pdf";
+  if (caseRecord.type === "video") return "video";
+  if (caseRecord.type === "audio") return "audio";
+  if (caseRecord.type === "image") return imageEncodingFormat(mediaHref);
+  return undefined;
+}
+
+function imageEncodingFormat(mediaHref: string) {
+  if (/\.png(?:$|[?#])/i.test(mediaHref)) return "image/png";
+  if (/\.gif(?:$|[?#])/i.test(mediaHref)) return "image/gif";
+  if (/\.webp(?:$|[?#])/i.test(mediaHref)) return "image/webp";
+  return "image/jpeg";
 }
 
 function truncateDescription(text: string, maxLength = 300) {
