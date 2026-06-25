@@ -3,11 +3,22 @@
 @tailwind utilities;
 
 :root {
-  color-scheme: dark;
+  color-scheme: light;
   --font-inter: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
     "Segoe UI", sans-serif;
   --font-space: "Space Grotesk", Inter, ui-sans-serif, system-ui, -apple-system,
     BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --archive-ink: #09090b;
+  --archive-muted: #666666;
+  --archive-line: #e5e5e5;
+  --archive-paper: #fafafa;
+  --archive-blue-soft: #f0f7ff;
+  --archive-blue: #0068d6;
+  --archive-blue-deep: #004a9f;
+  --archive-success: #007a3d;
+  --archive-teal: #007c89;
+  --archive-amber: #a16207;
+  --archive-magenta: #c026d3;
 }
 
 * {
@@ -18,10 +29,10 @@ body {
   margin: 0;
   font-family: var(--font-inter);
   background:
-    radial-gradient(circle at 20% 0%, rgba(70, 217, 255, 0.12), transparent 30rem),
-    radial-gradient(circle at 80% 8%, rgba(156, 124, 255, 0.12), transparent 28rem),
-    #050812;
-  color: #eff6ff;
+    linear-gradient(180deg, rgba(250, 250, 250, 0.98), transparent 22rem),
+    radial-gradient(circle at 50% 0%, rgba(0, 104, 214, 0.08), transparent 30rem),
+    #fafafa;
+  color: var(--archive-ink);
 }
 
 body::before {
@@ -31,10 +42,10 @@ body::before {
   pointer-events: none;
   content: "";
   background-image:
-    linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255, 255, 255, 0.025) 1px, transparent 1px);
-  background-size: 56px 56px;
-  mask-image: linear-gradient(to bottom, rgba(0, 0, 0, 0.8), transparent 75%);
+    linear-gradient(rgba(0, 0, 0, 0.035) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0, 0, 0, 0.03) 1px, transparent 1px);
+  background-size: 48px 48px;
+  mask-image: linear-gradient(to bottom, rgba(0, 0, 0, 0.55), transparent 68%);
 }
 
 a {
@@ -43,7 +54,11 @@ a {
 }
 
 .ufo-scrollbar {
-  scrollbar-color: rgba(70, 217, 255, 0.45) rgba(12, 22, 38, 0.72);
+  scrollbar-color: rgba(9, 9, 11, 0.34) rgba(245, 245, 245, 0.95);
+}
+
+::selection {
+  background: rgba(0, 104, 214, 0.18);
 }
 
 .relationship-weight-bridge,

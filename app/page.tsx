@@ -68,15 +68,15 @@ export default function HomePage() {
               <Link
                 key={feature.href}
                 href={feature.href}
-                className="rounded-lg border border-white/10 bg-slate-950/55 p-6 shadow-panel transition hover:-translate-y-0.5 hover:border-cyan-300/35 hover:bg-slate-900/70"
+                className="rounded-lg border border-slate-200 bg-white p-6 shadow-sm transition hover:-translate-y-0.5 hover:border-teal-200 hover:shadow-lg"
               >
-                <div className="flex h-11 w-11 items-center justify-center rounded-lg border border-cyan-300/25 bg-cyan-300/10 text-cyan-100">
+                <div className="flex h-11 w-11 items-center justify-center rounded-lg border border-teal-200 bg-teal-50 text-teal-700">
                   <Icon size={21} />
                 </div>
-                <h2 className="mt-5 font-[var(--font-space)] text-xl font-semibold text-white">
+                <h2 className="mt-5 font-[var(--font-space)] text-xl font-semibold text-slate-950">
                   {feature.title}
                 </h2>
-                <p className="mt-3 text-sm leading-6 text-slate-400">
+                <p className="mt-3 text-sm leading-6 text-slate-600">
                   {feature.description}
                 </p>
               </Link>
@@ -87,14 +87,14 @@ export default function HomePage() {
       <section className="mx-auto max-w-7xl px-4 pb-16 sm:px-6 lg:px-8">
         <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
           <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-cyan-100">
+            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-blue-700">
               Featured
             </p>
-            <h2 className="mt-2 font-[var(--font-space)] text-3xl font-semibold text-white">
+            <h2 className="mt-2 font-[var(--font-space)] text-3xl font-semibold text-slate-950">
               Latest official-source records
             </h2>
           </div>
-          <Link href="/explore" className="text-sm font-semibold text-cyan-100 hover:text-white">
+          <Link href="/explore" className="text-sm font-semibold text-blue-700 hover:text-blue-950">
             Browse all cases
           </Link>
         </div>

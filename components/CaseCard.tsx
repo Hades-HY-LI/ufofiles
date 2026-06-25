@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { CalendarDays, ExternalLink, LocateFixed, MapPin } from "lucide-react";
+import { CalendarDays, ExternalLink, LocateFixed, MapPin, ShieldCheck } from "lucide-react";
 import type { CaseRecord } from "@/lib/types";
 import { formatDate } from "@/lib/dates";
 import { labelMediaType } from "@/lib/filters";
@@ -17,32 +17,32 @@ export function CaseCard({ caseRecord, caseHref = `/case/${caseRecord.id}` }: Ca
   const sourceHref = getOfficialSourceHref(caseRecord);
 
   return (
-    <article className="group flex h-full flex-col rounded-lg border border-white/10 bg-slate-950/60 p-5 shadow-panel transition hover:-translate-y-0.5 hover:border-cyan-300/40 hover:bg-slate-900/82">
+    <article className="group flex h-full min-w-0 flex-col rounded-lg border border-neutral-200 bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:border-neutral-300 hover:shadow-lg">
       <div className="flex items-start justify-between gap-3">
         <TagBadge tone={caseRecord.type === "unknown" ? "slate" : "cyan"}>
           {labelMediaType(caseRecord.type)}
         </TagBadge>
-        <span className="rounded-md border border-violet-300/25 bg-violet-300/10 px-2 py-1 text-xs text-violet-100">
+        <span className="min-w-0 truncate rounded-md border border-neutral-200 bg-neutral-50 px-2 py-1 text-xs font-semibold text-neutral-700">
           {caseRecord.agency}
         </span>
       </div>
-      <h3 className="mt-4 line-clamp-2 font-[var(--font-space)] text-lg font-semibold leading-6 text-white">
+      <h3 className="mt-4 line-clamp-2 font-[var(--font-space)] text-lg font-semibold leading-6 text-slate-950">
         <Link href={caseHref}>{caseRecord.title}</Link>
       </h3>
-      <p className="mt-3 line-clamp-3 text-sm leading-6 text-slate-400">
+      <p className="mt-3 line-clamp-3 text-sm leading-6 text-slate-600">
         {caseRecord.summary}
       </p>
-      <div className="mt-4 space-y-2 text-sm text-slate-300">
+      <div className="mt-4 space-y-2 text-sm text-slate-600">
         <div className="flex items-center gap-2">
-          <CalendarDays size={15} className="text-cyan-200" />
+          <CalendarDays size={15} className="text-neutral-500" />
           <span>Incident: {formatDate(caseRecord.incidentDate)}</span>
         </div>
         <div className="flex items-center gap-2">
-          <CalendarDays size={15} className="text-violet-200" />
+          <CalendarDays size={15} className="text-neutral-500" />
           <span>Released: {formatDate(caseRecord.releaseDate)}</span>
         </div>
         <div className="flex items-center gap-2">
-          <MapPin size={15} className="text-emerald-200" />
+          <MapPin size={15} className="text-neutral-500" />
           <span className="line-clamp-1">{caseRecord.locationName}</span>
         </div>
       </div>
@@ -54,14 +54,14 @@ export function CaseCard({ caseRecord, caseHref = `/case/${caseRecord.id}` }: Ca
       <div className="mt-auto flex flex-wrap items-center gap-2 pt-5">
         <Link
           href={caseHref}
-          className="rounded-md bg-cyan-300 px-3 py-2 text-sm font-semibold text-slate-950 transition hover:bg-cyan-200"
+          className="rounded-md bg-neutral-950 px-3 py-2 text-sm font-semibold text-white transition hover:bg-neutral-800"
         >
           View case
         </Link>
         {canMap ? (
           <Link
             href={`/map?case=${caseRecord.id}`}
-            className="inline-flex items-center gap-1 rounded-md border border-emerald-300/30 bg-emerald-300/10 px-3 py-2 text-sm font-semibold text-emerald-100 transition hover:bg-emerald-300/20"
+            className="inline-flex items-center gap-1 rounded-md border border-neutral-200 bg-white px-3 py-2 text-sm font-semibold text-neutral-700 transition hover:bg-neutral-50"
           >
             <LocateFixed size={14} /> Show on map
           </Link>
@@ -70,9 +70,9 @@ export function CaseCard({ caseRecord, caseHref = `/case/${caseRecord.id}` }: Ca
           href={sourceHref}
           target="_blank"
           rel="noreferrer"
-          className="ml-auto inline-flex items-center gap-1 text-sm text-slate-400 transition hover:text-white"
+          className="ml-auto inline-flex items-center gap-1 text-sm font-semibold text-neutral-600 transition hover:text-neutral-950"
         >
-          Source <ExternalLink size={14} />
+          <ShieldCheck size={14} /> Source <ExternalLink size={14} />
         </a>
       </div>
     </article>

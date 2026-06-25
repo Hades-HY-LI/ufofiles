@@ -22,7 +22,7 @@ export function MediaEmbed({ src, title, type, fallback }: MediaEmbedProps) {
           title={title}
           onError={() => setFailed(true)}
           allow="fullscreen; encrypted-media"
-          className="aspect-video w-full rounded-lg border border-white/10 bg-black"
+          className="aspect-video w-full rounded-lg border border-slate-200 bg-black shadow-sm"
         />
       );
     }
@@ -32,7 +32,7 @@ export function MediaEmbed({ src, title, type, fallback }: MediaEmbedProps) {
         src={src}
         controls
         onError={() => setFailed(true)}
-        className="w-full rounded-lg border border-white/10 bg-black"
+        className="w-full rounded-lg border border-slate-200 bg-black shadow-sm"
       />
     );
   }
@@ -44,14 +44,14 @@ export function MediaEmbed({ src, title, type, fallback }: MediaEmbedProps) {
           src={src}
           title={title}
           onError={() => setFailed(true)}
-          className="h-48 w-full rounded-lg border border-white/10 bg-slate-950"
+          className="h-48 w-full rounded-lg border border-slate-200 bg-white shadow-sm"
         />
       );
     }
 
     return (
-      <div className="rounded-lg border border-white/10 bg-slate-950/70 p-5 shadow-panel">
-        <p className="mb-3 line-clamp-2 text-sm font-semibold text-slate-200">
+      <div className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
+        <p className="mb-3 line-clamp-2 text-sm font-semibold text-slate-900">
           {title}
         </p>
         <audio src={src} controls onError={() => setFailed(true)} className="w-full" />
@@ -61,16 +61,16 @@ export function MediaEmbed({ src, title, type, fallback }: MediaEmbedProps) {
 
   if (type === "document") {
     return (
-      <div className="overflow-hidden rounded-lg border border-white/10 bg-slate-950/70 shadow-panel">
-        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-white/10 bg-slate-950/90 px-4 py-3">
-          <span className="line-clamp-1 text-sm font-semibold text-slate-200">
+      <div className="overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm">
+        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 bg-slate-50 px-4 py-3">
+          <span className="line-clamp-1 text-sm font-semibold text-slate-900">
             {title}
           </span>
           <a
             href={src}
             target="_blank"
             rel="noreferrer"
-            className="rounded-md border border-cyan-300/30 bg-cyan-300/10 px-3 py-2 text-xs font-bold text-cyan-100 hover:bg-cyan-300/20"
+            className="rounded-md border border-blue-200 bg-blue-50 px-3 py-2 text-xs font-bold text-blue-700 hover:bg-blue-100"
           >
             Open PDF
           </a>
@@ -79,14 +79,14 @@ export function MediaEmbed({ src, title, type, fallback }: MediaEmbedProps) {
           src={src}
           title={title}
           onError={() => setFailed(true)}
-          className="h-[42rem] w-full bg-slate-950"
+          className="h-[42rem] w-full bg-white"
         />
       </div>
     );
   }
 
   return (
-    <div className="overflow-hidden rounded-lg border border-white/10 bg-slate-950/70">
+    <div className="overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm">
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
         src={src}

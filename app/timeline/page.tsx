@@ -28,21 +28,21 @@ export default function TimelinePage() {
       />
       <div className="mb-8 flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
         <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-cyan-100">
-            Timeline
-          </p>
-          <h1 className="mt-2 font-[var(--font-space)] text-4xl font-semibold text-white">
-            Releases and incidents in context
+            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-teal-700">
+              Timeline
+            </p>
+          <h1 className="mt-2 font-[var(--font-space)] text-4xl font-semibold text-slate-950">
+            Scroll through release waves
           </h1>
         </div>
-        <p className="max-w-2xl text-sm leading-6 text-slate-400">
-          Track release waves first, while preserving incident dates where the
-          official files include them.
+        <p className="max-w-2xl text-sm leading-6 text-slate-600">
+          Follow each official release as a stage, expand files in place, and
+          keep incident dates, media type, and source provenance visible.
         </p>
       </div>
       <Suspense
         fallback={
-          <div className="rounded-lg border border-white/10 bg-slate-950/70 p-10 text-center text-sm text-slate-400 shadow-panel">
+          <div className="rounded-lg border border-slate-200 bg-white p-10 text-center text-sm text-slate-500 shadow-sm">
             Loading timeline...
           </div>
         }

@@ -13,15 +13,15 @@ export function ReleaseBanner() {
     <div
       className={`border-b px-4 py-2 text-sm ${
         metadata.status === "failed"
-          ? "border-red-300/30 bg-red-300/10 text-red-50"
+          ? "border-red-200 bg-red-50 text-red-900"
           : metadata.status === "stale" || metadata.status === "partial"
-            ? "border-amber-300/30 bg-amber-300/10 text-amber-50"
-            : "border-cyan-300/20 bg-cyan-300/10 text-cyan-50"
+            ? "border-amber-200 bg-amber-50 text-amber-950"
+            : "border-lime-200 bg-lime-50 text-lime-950"
       }`}
     >
       <div className="mx-auto flex max-w-7xl flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-2">
-          <Bell size={16} className="shrink-0 text-cyan-200" />
+          <Bell size={16} className="shrink-0 text-lime-700" />
           <span>
             {hasUpdates
               ? `${metadata.newRecordCount} new and ${metadata.changedRecordCount} changed official records synced from war.gov/ufo.`
@@ -36,7 +36,7 @@ export function ReleaseBanner() {
         </div>
         <Link
           href="/releases"
-          className="inline-flex items-center gap-1 font-medium text-white hover:text-cyan-100"
+          className="inline-flex items-center gap-1 font-semibold text-blue-700 hover:text-blue-950"
         >
           View release tracker <ExternalLink size={14} />
         </Link>

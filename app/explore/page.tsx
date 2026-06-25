@@ -31,14 +31,14 @@ export default function ExplorePage() {
       />
       <div className="mb-8 flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
         <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-cyan-100">
+            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-blue-700">
             Case explorer
           </p>
-          <h1 className="mt-2 font-[var(--font-space)] text-4xl font-semibold text-white">
+          <h1 className="mt-2 font-[var(--font-space)] text-4xl font-semibold text-slate-950">
             Browse official UFO/UAP records
           </h1>
         </div>
-        <p className="max-w-2xl text-sm leading-6 text-slate-400">
+        <p className="max-w-2xl text-sm leading-6 text-slate-600">
           Search and filter official-source records. Incomplete dates, locations,
           and media links are preserved so future releases can sync cleanly.
         </p>
@@ -52,23 +52,23 @@ export default function ExplorePage() {
 
 function StaticCaseList({ cases }: { cases: CaseRecord[] }) {
   return (
-    <section className="overflow-hidden rounded-lg border border-white/10 bg-slate-950/60 shadow-panel">
-      <div className="border-b border-white/10 px-4 py-3 text-sm font-semibold text-white">
+    <section className="overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm">
+      <div className="border-b border-slate-200 px-4 py-3 text-sm font-semibold text-slate-950">
         {cases.length} official-source records
       </div>
       <div className="divide-y divide-white/10">
         {cases.map((caseRecord) => (
           <article key={caseRecord.id} className="grid gap-3 p-4 lg:grid-cols-[1fr_10rem_8rem]">
             <div>
-              <h2 className="font-[var(--font-space)] text-base font-semibold text-white">
+              <h2 className="font-[var(--font-space)] text-base font-semibold text-slate-950">
                 <a href={`/case/${caseRecord.id}`}>{caseRecord.title}</a>
               </h2>
               <p className="mt-1 text-sm text-slate-500">{caseRecord.agency}</p>
             </div>
-            <div className="text-sm text-slate-300">
+            <div className="text-sm text-slate-600">
               {formatDate(caseRecord.releaseDate)}
             </div>
-            <div className="text-sm text-slate-400">
+            <div className="text-sm text-slate-600">
               {labelMediaType(caseRecord.type)}
             </div>
           </article>
