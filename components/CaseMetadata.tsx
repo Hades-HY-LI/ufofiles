@@ -27,13 +27,13 @@ export function CaseMetadata({ caseRecord }: CaseMetadataProps) {
   ];
 
   return (
-    <dl className="divide-y divide-white/10 rounded-lg border border-white/10 bg-slate-950/60">
+    <dl className="divide-y divide-slate-200 rounded-lg border border-slate-200 bg-white shadow-sm">
       {rows.map(([label, value]) => (
         <div key={label} className="grid gap-1 p-4 sm:grid-cols-[9rem_1fr]">
-          <dt className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
+          <dt className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">
             {label}
           </dt>
-          <dd className="text-sm text-slate-200">{value}</dd>
+          <dd className="text-sm text-slate-700">{value}</dd>
         </div>
       ))}
     </dl>
@@ -46,7 +46,7 @@ function MetadataLink({ href }: { href: string }) {
       href={href}
       target="_blank"
       rel="noreferrer"
-      className="break-words text-cyan-100 underline decoration-cyan-300/40 underline-offset-4 hover:text-white"
+      className="break-words font-semibold text-teal-700 underline decoration-teal-300/70 underline-offset-4 hover:text-teal-950"
     >
       {displayUrl(href)}
     </a>

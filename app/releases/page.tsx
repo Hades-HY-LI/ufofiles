@@ -38,14 +38,14 @@ export default function ReleasesPage() {
       />
       <div className="mb-8 flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
         <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-cyan-100">
-            Release tracker
-          </p>
-          <h1 className="mt-2 font-[var(--font-space)] text-4xl font-semibold text-white">
+            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-orange-700">
+              Release tracker
+            </p>
+          <h1 className="mt-2 font-[var(--font-space)] text-4xl font-semibold text-slate-950">
             Official release waves and sync changes
           </h1>
         </div>
-        <p className="max-w-2xl text-sm leading-6 text-slate-400">
+        <p className="max-w-2xl text-sm leading-6 text-slate-600">
           Track what the archive knows about each official release, what changed
           during the last sync, and which records came from official bundle
           fallbacks.
@@ -60,12 +60,12 @@ export default function ReleasesPage() {
       </section>
 
       <section className="mt-6 grid gap-4 lg:grid-cols-[1fr_22rem]">
-        <div className="overflow-hidden rounded-lg border border-white/10 bg-slate-950/60 shadow-panel">
-          <div className="flex items-center gap-2 border-b border-white/10 px-4 py-3 text-sm font-semibold text-white">
-            <FileStack size={17} className="text-cyan-200" />
+        <div className="overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm">
+          <div className="flex items-center gap-2 border-b border-slate-200 px-4 py-3 text-sm font-semibold text-slate-950">
+            <FileStack size={17} className="text-teal-700" />
             Known official releases
           </div>
-          <div className="divide-y divide-white/10">
+          <div className="divide-y divide-slate-200">
             {releases.map((release) => {
               const releaseCases = cases.filter(
                 (caseRecord) => caseRecord.releaseDate === release.releaseDate
@@ -78,24 +78,24 @@ export default function ReleasesPage() {
                 >
                   <div>
                     <div className="flex flex-wrap items-center gap-2">
-                      <span className="rounded-md border border-cyan-300/25 bg-cyan-300/10 px-2 py-1 text-xs text-cyan-100">
+                      <span className="rounded-md border border-teal-200 bg-teal-50 px-2 py-1 text-xs font-semibold text-teal-700">
                         {formatDate(release.releaseDate)}
                       </span>
-                      <span className="rounded-md border border-white/10 bg-white/[0.035] px-2 py-1 text-xs text-slate-300">
+                      <span className="rounded-md border border-slate-200 bg-slate-50 px-2 py-1 text-xs font-semibold text-slate-600">
                         {release.fileCount} files
                       </span>
                     </div>
-                    <h2 className="mt-3 font-[var(--font-space)] text-2xl font-semibold text-white">
+                    <h2 className="mt-3 font-[var(--font-space)] text-2xl font-semibold text-slate-950">
                       {release.title}
                     </h2>
-                    <p className="mt-2 text-sm leading-6 text-slate-400">
+                    <p className="mt-2 text-sm leading-6 text-slate-600">
                       {release.notes ?? "Official release record."}
                     </p>
-                    <div className="mt-3 flex flex-wrap gap-2 text-xs text-slate-300">
+                    <div className="mt-3 flex flex-wrap gap-2 text-xs text-slate-600">
                       {Object.entries(byType).map(([type, count]) => (
                         <span
                           key={type}
-                          className="rounded-md border border-white/10 bg-white/[0.035] px-2 py-1"
+                            className="rounded-md border border-slate-200 bg-slate-50 px-2 py-1 font-semibold"
                         >
                           {labelMediaType(type as MediaType)}: {count}
                         </span>
@@ -105,7 +105,7 @@ export default function ReleasesPage() {
                   <div className="flex flex-wrap gap-2 lg:justify-end">
                     <Link
                       href={`/timeline?release=${encodeURIComponent(release.releaseDate ?? "unknown")}`}
-                      className="inline-flex items-center gap-2 rounded-md border border-white/10 bg-white/[0.04] px-3 py-2 text-sm font-semibold text-slate-100 transition hover:bg-white/10"
+                      className="inline-flex items-center gap-2 rounded-md border border-orange-200 bg-orange-50 px-3 py-2 text-sm font-semibold text-orange-700 transition hover:bg-orange-100"
                     >
                       Timeline <ArrowRight size={15} />
                     </Link>
@@ -113,7 +113,7 @@ export default function ReleasesPage() {
                       href={release.sourceUrl}
                       target="_blank"
                       rel="noreferrer"
-                      className="inline-flex items-center gap-2 rounded-md bg-cyan-300 px-3 py-2 text-sm font-bold text-slate-950 transition hover:bg-cyan-200"
+                      className="inline-flex items-center gap-2 rounded-md bg-blue-600 px-3 py-2 text-sm font-bold text-white transition hover:bg-blue-700"
                     >
                       Source <ExternalLink size={15} />
                     </a>
@@ -124,9 +124,9 @@ export default function ReleasesPage() {
           </div>
         </div>
 
-        <aside className="rounded-lg border border-white/10 bg-slate-950/72 p-4 shadow-panel">
-          <div className="flex items-center gap-2 text-sm font-semibold text-white">
-            <GitCompareArrows size={17} className="text-fuchsia-200" />
+        <aside className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
+          <div className="flex items-center gap-2 text-sm font-semibold text-slate-950">
+            <GitCompareArrows size={17} className="text-pink-600" />
             Last sync delta
           </div>
           <p className="mt-2 text-xs leading-5 text-slate-500">
@@ -138,9 +138,9 @@ export default function ReleasesPage() {
                 <Link
                   key={caseRecord.id}
                   href={`/case/${caseRecord.id}`}
-                  className="block rounded-md border border-white/10 bg-white/[0.03] p-3 transition hover:border-cyan-300/30 hover:bg-cyan-300/10"
+                  className="block rounded-md border border-slate-200 bg-slate-50 p-3 transition hover:border-teal-200 hover:bg-teal-50"
                 >
-                  <span className="line-clamp-2 text-sm font-semibold text-white">
+                  <span className="line-clamp-2 text-sm font-semibold text-slate-950">
                     {caseRecord.title}
                   </span>
                   <span className="mt-1 block text-xs text-slate-500">
@@ -149,7 +149,7 @@ export default function ReleasesPage() {
                 </Link>
               ))
             ) : (
-              <p className="rounded-md border border-white/10 bg-white/[0.03] p-3 text-sm text-slate-400">
+              <p className="rounded-md border border-slate-200 bg-slate-50 p-3 text-sm text-slate-600">
                 No new records were reported in the latest sync metadata.
               </p>
             )}
@@ -162,11 +162,11 @@ export default function ReleasesPage() {
 
 function Metric({ label, value }: { label: string; value: string | number }) {
   return (
-    <div className="rounded-lg border border-white/10 bg-slate-950/65 p-4 shadow-panel">
-      <div className="font-[var(--font-space)] text-2xl font-semibold text-white">
+    <div className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
+      <div className="font-[var(--font-space)] text-2xl font-semibold text-slate-950">
         {value}
       </div>
-      <div className="mt-1 text-xs uppercase tracking-[0.16em] text-slate-500">
+      <div className="mt-1 text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">
         {label}
       </div>
     </div>

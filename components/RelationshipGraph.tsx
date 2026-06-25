@@ -207,10 +207,10 @@ export function RelationshipGraph({ graph }: RelationshipGraphProps) {
 
   return (
     <div className="grid gap-4 xl:grid-cols-[1fr_24rem]">
-      <section className="overflow-hidden rounded-lg border border-white/10 bg-slate-950/70 shadow-panel">
-        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-white/10 px-4 py-3">
-          <div className="flex items-center gap-2 text-sm text-slate-300">
-            <GitBranch size={17} className="text-cyan-200" />
+      <section className="overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm">
+        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 px-4 py-3">
+          <div className="flex items-center gap-2 text-sm font-semibold text-slate-700">
+            <GitBranch size={17} className="text-violet-700" />
             {visible.nodes.length} significant files / {visible.edges.length} relationship links
           </div>
           <div className="flex gap-2 overflow-x-auto">
@@ -238,7 +238,7 @@ export function RelationshipGraph({ graph }: RelationshipGraphProps) {
         </div>
         <div
           ref={graphFrameRef}
-          className="relative h-[42rem] overscroll-contain bg-[radial-gradient(circle_at_50%_45%,rgba(70,217,255,0.11),transparent_23rem)]"
+          className="relative h-[42rem] overscroll-contain bg-[radial-gradient(circle_at_50%_45%,rgba(124,58,237,0.10),transparent_23rem)]"
         >
           <svg
             viewBox={`0 0 ${WIDTH} ${HEIGHT}`}
@@ -253,8 +253,8 @@ export function RelationshipGraph({ graph }: RelationshipGraphProps) {
           >
             <defs>
               <radialGradient id="node-halo" cx="50%" cy="50%" r="50%">
-                <stop offset="0%" stopColor="rgba(103,232,249,.32)" />
-                <stop offset="100%" stopColor="rgba(103,232,249,0)" />
+                <stop offset="0%" stopColor="rgba(124,58,237,.24)" />
+                <stop offset="100%" stopColor="rgba(124,58,237,0)" />
               </radialGradient>
             </defs>
             <rect
@@ -280,7 +280,7 @@ export function RelationshipGraph({ graph }: RelationshipGraphProps) {
                     x2={index * 72}
                     y1={0}
                     y2={HEIGHT}
-                    stroke="rgba(148,163,184,.08)"
+                    stroke="rgba(100,116,139,.14)"
                   />
                 ))}
                 {Array.from({ length: 11 }).map((_, index) => (
@@ -290,7 +290,7 @@ export function RelationshipGraph({ graph }: RelationshipGraphProps) {
                     x2={WIDTH}
                     y1={index * 74}
                     y2={index * 74}
-                    stroke="rgba(148,163,184,.08)"
+                    stroke="rgba(100,116,139,.14)"
                   />
                 ))}
               </g>
@@ -309,7 +309,7 @@ export function RelationshipGraph({ graph }: RelationshipGraphProps) {
                       y1={source.y}
                       x2={target.x}
                       y2={target.y}
-                      stroke={active ? "rgba(103,232,249,.78)" : "rgba(148,163,184,.2)"}
+                      stroke={active ? "rgba(124,58,237,.72)" : "rgba(100,116,139,.22)"}
                       strokeWidth={roundPoint(active ? Math.min(5.5, edge.score / 1.8) : Math.max(0.8, edge.score / 4.8))}
                       opacity={active ? 0.9 : clamp(edge.score / 13, 0.24, 0.62)}
                     />
@@ -353,14 +353,14 @@ export function RelationshipGraph({ graph }: RelationshipGraphProps) {
                         cx={point.x}
                         cy={point.y}
                         r={selectedNode ? radius * 2.5 : radius * 1.35}
-                        fill={selectedNode ? "url(#node-halo)" : "rgba(255,255,255,.045)"}
+                        fill={selectedNode ? "url(#node-halo)" : "rgba(226,232,240,.5)"}
                       />
                       <circle
                         cx={point.x}
                         cy={point.y}
                         r={selectedNode ? radius + 1.2 : radius}
                         fill={typeColor[node.type]}
-                        stroke={selectedNode ? "#ecfeff" : "rgba(15,23,42,.9)"}
+                        stroke={selectedNode ? "#ffffff" : "rgba(15,23,42,.55)"}
                         strokeWidth={selectedNode ? 2.2 : 1.2}
                         opacity={selectedNode ? 1 : 0.88}
                       />
@@ -372,13 +372,13 @@ export function RelationshipGraph({ graph }: RelationshipGraphProps) {
                             width={labelWidth(node.title)}
                             height={24}
                             rx={5}
-                            fill="rgba(2,6,23,.78)"
-                            stroke="rgba(255,255,255,.12)"
+                            fill="rgba(255,255,255,.94)"
+                            stroke="rgba(203,213,225,.95)"
                           />
                           <text
                             x={point.x + radius + 15}
                             y={point.y + 4}
-                            className="select-none fill-slate-100 text-[13px] font-semibold"
+                            className="select-none fill-slate-900 text-[13px] font-semibold"
                           >
                             {truncateNodeTitle(node.title)}
                           </text>
@@ -390,7 +390,7 @@ export function RelationshipGraph({ graph }: RelationshipGraphProps) {
               </g>
             </g>
           </svg>
-          <div className="absolute left-4 top-4 flex items-center gap-2 rounded-md border border-white/10 bg-black/45 p-1 backdrop-blur">
+          <div className="absolute left-4 top-4 flex items-center gap-2 rounded-md border border-slate-200 bg-white/90 p-1 shadow-sm backdrop-blur">
             <IconButton label="Zoom in" onClick={() => zoomBy(0.18)}>
               <Plus size={15} />
             </IconButton>
@@ -400,50 +400,50 @@ export function RelationshipGraph({ graph }: RelationshipGraphProps) {
             <IconButton label="Reset graph view" onClick={resetView}>
               <RotateCcw size={15} />
             </IconButton>
-            <span className="px-2 text-xs tabular-nums text-slate-300">
+            <span className="px-2 text-xs tabular-nums text-slate-600">
               {Math.round(zoom * 100)}%
             </span>
           </div>
-          <div className="pointer-events-none absolute right-4 top-4 inline-flex items-center gap-2 rounded-md border border-white/10 bg-black/35 px-3 py-2 text-xs text-slate-300 backdrop-blur">
-            <MousePointer2 size={14} className="text-cyan-100" />
+          <div className="pointer-events-none absolute right-4 top-4 inline-flex items-center gap-2 rounded-md border border-slate-200 bg-white/88 px-3 py-2 text-xs text-slate-600 shadow-sm backdrop-blur">
+            <MousePointer2 size={14} className="text-violet-700" />
             Drag canvas to pan, scroll to zoom, drag a file to inspect clusters.
           </div>
-          <div className="pointer-events-none absolute bottom-4 left-4 flex max-w-[32rem] flex-wrap gap-2 text-xs text-slate-300">
+          <div className="pointer-events-none absolute bottom-4 left-4 flex max-w-[32rem] flex-wrap gap-2 text-xs text-slate-600">
             {Object.entries(typeColor).map(([type, color]) => (
-              <span key={type} className="inline-flex items-center gap-2 rounded-md border border-white/10 bg-black/35 px-2 py-1 backdrop-blur">
+              <span key={type} className="inline-flex items-center gap-2 rounded-md border border-slate-200 bg-white/88 px-2 py-1 shadow-sm backdrop-blur">
                 <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: color }} />
                 {labelMediaType(type as MediaType)}
               </span>
             ))}
           </div>
-          <div className="pointer-events-none absolute bottom-4 right-4 rounded-md border border-white/10 bg-black/40 p-3 text-xs text-slate-300 backdrop-blur">
-            <div className="font-semibold text-white">Relationship strength</div>
+          <div className="pointer-events-none absolute bottom-4 right-4 rounded-md border border-slate-200 bg-white/88 p-3 text-xs text-slate-600 shadow-sm backdrop-blur">
+            <div className="font-semibold text-slate-950">Relationship strength</div>
             <div className="mt-2 flex items-center gap-2">
-              <span className="h-px w-12 bg-slate-500" />
+              <span className="h-px w-12 bg-slate-400" />
               Lower score
             </div>
             <div className="mt-2 flex items-center gap-2">
-              <span className="h-1.5 w-12 rounded bg-cyan-200" />
+              <span className="h-1.5 w-12 rounded bg-violet-500" />
               Higher score
             </div>
           </div>
         </div>
       </section>
 
-      <aside className="rounded-lg border border-white/10 bg-slate-950/75 p-5 shadow-panel">
+      <aside className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
         {selected ? (
           <>
             <div className="flex items-start justify-between gap-3">
               <div>
-                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-cyan-100">
+                <p className="text-xs font-semibold uppercase tracking-[0.14em] text-violet-700">
                   Selected file
                 </p>
-                <h2 className="mt-2 font-[var(--font-space)] text-xl font-semibold leading-tight text-white">
+                <h2 className="mt-2 font-[var(--font-space)] text-xl font-semibold leading-tight text-slate-950">
                   {selected.title}
                 </h2>
               </div>
               <span
-                className="rounded-md border border-white/10 bg-white/[0.04] px-2 py-1 text-xs text-slate-300"
+                className="rounded-md border border-slate-200 bg-slate-50 px-2 py-1 text-xs font-semibold text-slate-600"
                 title="Graph prominence score, normalized from 0 to 100 based on archive-computed relationship strength."
               >
                 Prominence {selected.significance}
@@ -457,11 +457,11 @@ export function RelationshipGraph({ graph }: RelationshipGraphProps) {
             </dl>
             <Link
               href={`/case/${selected.id}`}
-              className="mt-5 inline-flex w-full items-center justify-center gap-2 rounded-md bg-cyan-300 px-4 py-3 text-sm font-bold text-slate-950 transition hover:bg-cyan-200"
+              className="mt-5 inline-flex w-full items-center justify-center gap-2 rounded-md bg-blue-600 px-4 py-3 text-sm font-bold text-white transition hover:bg-blue-700"
             >
               Open case <Maximize2 size={16} />
             </Link>
-            <h3 className="mt-7 text-sm font-semibold text-white">
+            <h3 className="mt-7 text-sm font-semibold text-slate-950">
               Strongest archive-computed relationships
             </h3>
             <div className="mt-3 space-y-3">
@@ -473,17 +473,17 @@ export function RelationshipGraph({ graph }: RelationshipGraphProps) {
                   <Link
                     key={`${edge.source}-${edge.target}`}
                     href={`/case/${related.id}`}
-                    className="block rounded-md border border-white/10 bg-white/[0.035] p-3 transition hover:border-cyan-300/30 hover:bg-cyan-300/10"
+                    className="block rounded-md border border-slate-200 bg-slate-50 p-3 transition hover:border-violet-200 hover:bg-violet-50"
                   >
                     <div className="flex items-start justify-between gap-3">
-                      <span className="line-clamp-2 text-sm font-semibold text-white">
+                      <span className="line-clamp-2 text-sm font-semibold text-slate-950">
                         {related.title}
                       </span>
-                      <span className="rounded bg-black/30 px-1.5 py-0.5 text-xs text-cyan-100">
+                      <span className="rounded bg-violet-100 px-1.5 py-0.5 text-xs font-semibold text-violet-700">
                         {edge.score}
                       </span>
                     </div>
-                    <p className="mt-2 line-clamp-2 text-xs leading-5 text-slate-400">
+                    <p className="mt-2 line-clamp-2 text-xs leading-5 text-slate-600">
                       {edge.reasons.map(formatRelationshipReason).join(" / ")}
                     </p>
                   </Link>
@@ -492,7 +492,7 @@ export function RelationshipGraph({ graph }: RelationshipGraphProps) {
             </div>
           </>
         ) : (
-          <p className="text-sm text-slate-400">No graph nodes are available yet.</p>
+          <p className="text-sm text-slate-600">No graph nodes are available yet.</p>
         )}
       </aside>
     </div>
@@ -528,17 +528,17 @@ function labelWidth(title: string) {
 
 function Meta({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-md border border-white/10 bg-white/[0.035] p-3">
-      <dt className="text-xs uppercase tracking-[0.16em] text-slate-500">{label}</dt>
-      <dd className="mt-1 text-slate-200">{value}</dd>
+    <div className="rounded-md border border-slate-200 bg-slate-50 p-3">
+      <dt className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">{label}</dt>
+      <dd className="mt-1 text-slate-800">{value}</dd>
     </div>
   );
 }
 
 function WeightMeta({ value }: { value: string }) {
   return (
-    <div className="relative rounded-md border border-white/10 bg-white/[0.035] p-3">
-      <dt className="flex items-start justify-between gap-2 text-xs uppercase tracking-[0.16em] text-slate-500">
+    <div className="relative rounded-md border border-slate-200 bg-slate-50 p-3">
+      <dt className="flex items-start justify-between gap-2 text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">
         <span>Relationship weight</span>
         <span
           className="relationship-weight-info relative inline-flex"
@@ -547,14 +547,14 @@ function WeightMeta({ value }: { value: string }) {
             type="button"
             aria-label="How relationship weight is calculated"
             aria-describedby="relationship-weight-help"
-            className="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full border border-white/10 bg-black/25 text-slate-400 outline-none transition hover:border-cyan-300/35 hover:text-cyan-100 focus:border-cyan-300/50 focus:text-cyan-100"
+            className="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-500 outline-none transition hover:border-violet-300 hover:text-violet-700 focus:border-violet-400 focus:text-violet-700"
           >
             <Info size={12} />
           </button>
           <span className="relationship-weight-bridge absolute right-0 top-5 h-3 w-80" />
           <span
             id="relationship-weight-help"
-            className="relationship-weight-tooltip pointer-events-auto absolute right-0 top-8 z-20 w-80 rounded-md border border-cyan-300/20 bg-slate-950/95 p-3 text-xs normal-case leading-5 tracking-normal text-slate-300 shadow-panel backdrop-blur"
+            className="relationship-weight-tooltip pointer-events-auto absolute right-0 top-8 z-20 w-80 rounded-md border border-violet-200 bg-white p-3 text-xs normal-case leading-5 tracking-normal text-slate-600 shadow-lg backdrop-blur"
           >
             Relationship weight is the sum of this file&apos;s visible and hidden
             archive-computed relationship scores. Each pair can score for same
@@ -563,7 +563,7 @@ function WeightMeta({ value }: { value: string }) {
           </span>
         </span>
       </dt>
-      <dd className="mt-1 text-slate-200">{value}</dd>
+      <dd className="mt-1 text-slate-800">{value}</dd>
     </div>
   );
 }
@@ -583,7 +583,7 @@ function IconButton({
       aria-label={label}
       title={label}
       onClick={onClick}
-      className="inline-flex h-8 w-8 items-center justify-center rounded border border-white/10 bg-white/[0.04] text-slate-200 transition hover:border-cyan-300/35 hover:text-white"
+      className="inline-flex h-8 w-8 items-center justify-center rounded border border-slate-200 bg-white text-slate-600 transition hover:border-violet-300 hover:text-violet-700"
     >
       {children}
     </button>
@@ -696,7 +696,7 @@ function pillClass(active: boolean) {
   return clsx(
     "whitespace-nowrap rounded-md border px-3 py-1.5 text-xs font-semibold transition",
     active
-      ? "border-cyan-300/45 bg-cyan-300/15 text-cyan-50"
-      : "border-white/10 bg-white/[0.035] text-slate-300 hover:border-white/20 hover:text-white"
+      ? "border-violet-200 bg-violet-600 text-white"
+      : "border-slate-200 bg-white text-slate-600 hover:bg-slate-50 hover:text-slate-950"
   );
 }

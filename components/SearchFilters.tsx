@@ -37,39 +37,39 @@ export function SearchFilters({
   return (
     <aside
       className={clsx(
-        "rounded-lg border border-white/10 bg-slate-950/72 p-4 shadow-panel",
+        "rounded-lg border border-neutral-200 bg-white p-4 shadow-sm",
         !compact && "lg:sticky lg:top-28"
       )}
     >
       <div className="flex items-center justify-between gap-3">
         <div className="flex items-center gap-2">
-          <Filter size={17} className="text-cyan-200" />
-          <h2 className="font-[var(--font-space)] text-base font-semibold text-white">
+          <Filter size={17} className="text-neutral-700" />
+          <h2 className="font-[var(--font-space)] text-base font-semibold text-neutral-950">
             Search archive
           </h2>
         </div>
         <button
           type="button"
           onClick={onReset}
-          className="inline-flex items-center gap-1 text-xs text-slate-400 transition hover:text-white"
+          className="inline-flex items-center gap-1 text-xs font-semibold text-neutral-500 transition hover:text-neutral-950"
         >
           <X size={14} /> Reset
         </button>
       </div>
-      <p className="mt-2 text-xs text-slate-500">
+      <p className="mt-2 text-xs text-neutral-500">
         Showing {resultCount} of {totalCount} official-source records.
       </p>
 
-      <label className="mt-5 block text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
+      <label className="mt-5 block text-xs font-semibold uppercase tracking-[0.14em] text-neutral-500">
         Search
       </label>
-      <div className="mt-2 flex items-center gap-2 rounded-md border border-white/10 bg-black/25 px-3 py-2">
-        <Search size={16} className="text-slate-500" />
+      <div className="mt-2 flex items-center gap-2 rounded-md border border-neutral-200 bg-neutral-50 px-3 py-2">
+        <Search size={16} className="text-neutral-500" />
         <input
           value={filters.query}
           onChange={(event) => update({ query: event.target.value })}
           placeholder="Title, agency, date, location"
-          className="min-w-0 flex-1 bg-transparent text-sm text-white outline-none placeholder:text-slate-600"
+          className="min-w-0 flex-1 bg-transparent text-sm text-neutral-950 outline-none placeholder:text-neutral-400"
         />
       </div>
 
@@ -117,13 +117,13 @@ function FilterSelect({
 }) {
   return (
     <label className="mt-4 block">
-      <span className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
+        <span className="text-xs font-semibold uppercase tracking-[0.14em] text-neutral-500">
         {label}
       </span>
       <select
         value={value}
         onChange={(event) => onChange(event.target.value)}
-        className="mt-2 w-full rounded-md border border-white/10 bg-black/30 px-3 py-2 text-sm text-slate-100 outline-none transition focus:border-cyan-300/50"
+        className="mt-2 w-full rounded-md border border-neutral-200 bg-white px-3 py-2 text-sm text-neutral-900 outline-none transition focus:border-neutral-950 focus:ring-2 focus:ring-neutral-200"
       >
         <option value="all">All</option>
         {options.map((option) => (

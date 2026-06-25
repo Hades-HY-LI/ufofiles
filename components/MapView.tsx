@@ -209,9 +209,9 @@ export function MapView({ cases }: MapViewProps) {
 
   return (
     <div className="grid min-h-[calc(100vh-8rem)] gap-4 xl:grid-cols-[22rem_1fr_20rem]">
-      <aside className="z-10 rounded-lg border border-white/10 bg-slate-950/82 p-4 shadow-panel backdrop-blur">
-        <div className="flex items-center gap-2 text-sm font-semibold text-white">
-          <Layers3 size={17} className="text-cyan-200" />
+      <aside className="z-10 rounded-lg border border-slate-200 bg-white p-4 shadow-sm backdrop-blur">
+        <div className="flex items-center gap-2 text-sm font-semibold text-slate-950">
+          <Layers3 size={17} className="text-teal-700" />
           Map controls
         </div>
         <p className="mt-2 text-xs leading-5 text-slate-500">
@@ -223,13 +223,13 @@ export function MapView({ cases }: MapViewProps) {
           <span className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
             Search
           </span>
-          <div className="mt-2 flex items-center gap-2 rounded-md border border-white/10 bg-black/30 px-3 py-2">
+          <div className="mt-2 flex items-center gap-2 rounded-md border border-slate-200 bg-slate-50 px-3 py-2">
             <Search size={15} className="text-slate-500" />
             <input
               value={query}
               onChange={(event) => setQuery(event.target.value)}
               placeholder="Title, agency, location"
-              className="min-w-0 flex-1 bg-transparent text-sm text-white outline-none placeholder:text-slate-600"
+              className="min-w-0 flex-1 bg-transparent text-sm text-slate-950 outline-none placeholder:text-slate-400"
             />
           </div>
         </label>
@@ -247,8 +247,8 @@ export function MapView({ cases }: MapViewProps) {
                 className={clsx(
                   "rounded-md border px-3 py-2 text-sm transition",
                   type === item
-                    ? "border-cyan-300/45 bg-cyan-300/15 text-cyan-50"
-                    : "border-white/10 bg-white/[0.035] text-slate-300 hover:border-white/20 hover:text-white"
+                    ? "border-teal-200 bg-teal-600 text-white"
+                    : "border-slate-200 bg-white text-slate-600 hover:bg-slate-50 hover:text-slate-950"
                 )}
               >
                 {item === "all" ? "All" : labelMediaType(item)}
@@ -269,10 +269,10 @@ export function MapView({ cases }: MapViewProps) {
         </div>
       </aside>
 
-      <section className="overflow-hidden rounded-lg border border-white/10 bg-slate-950/70 shadow-panel">
-        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-white/10 px-4 py-3">
+      <section className="overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm">
+        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 px-4 py-3">
           <div>
-            <h1 className="font-[var(--font-space)] text-xl font-semibold text-white">
+            <h1 className="font-[var(--font-space)] text-xl font-semibold text-slate-950">
               Map Explorer
             </h1>
             <p className="mt-1 text-xs text-slate-500">
@@ -280,12 +280,12 @@ export function MapView({ cases }: MapViewProps) {
             </p>
           </div>
           {selected?.latitude !== null && selected?.longitude !== null ? (
-            <span className="inline-flex items-center gap-2 rounded-md border border-emerald-300/25 bg-emerald-300/10 px-3 py-2 text-xs text-emerald-100">
+            <span className="inline-flex items-center gap-2 rounded-md border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs font-semibold text-emerald-700">
               <Crosshair size={14} />
               Focus ready
             </span>
           ) : (
-            <span className="inline-flex items-center gap-2 rounded-md border border-amber-300/25 bg-amber-300/10 px-3 py-2 text-xs text-amber-100">
+            <span className="inline-flex items-center gap-2 rounded-md border border-orange-200 bg-orange-50 px-3 py-2 text-xs font-semibold text-orange-700">
               <FileQuestion size={14} />
               No coordinates
             </span>
@@ -390,11 +390,11 @@ export function MapView({ cases }: MapViewProps) {
         </div>
       </section>
 
-      <aside className="rounded-lg border border-white/10 bg-slate-950/82 p-4 shadow-panel">
+      <aside className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
         <SelectedMapCase caseRecord={selected} />
-        <div className="mt-5 border-t border-white/10 pt-5">
+        <div className="mt-5 border-t border-slate-200 pt-5">
           <div className="flex items-center justify-between gap-3">
-            <h2 className="text-sm font-semibold text-white">
+            <h2 className="text-sm font-semibold text-slate-950">
               Unmapped records
             </h2>
             <span className="text-xs text-slate-500">{unmappedCases.length}</span>
@@ -404,9 +404,9 @@ export function MapView({ cases }: MapViewProps) {
               <Link
                 key={caseRecord.id}
                 href={`/case/${caseRecord.id}`}
-                className="block rounded-md border border-white/10 bg-white/[0.03] p-3 transition hover:border-cyan-300/30 hover:bg-cyan-300/10"
+                className="block rounded-md border border-slate-200 bg-slate-50 p-3 transition hover:border-teal-200 hover:bg-teal-50"
               >
-                <span className="line-clamp-2 text-sm font-semibold text-white">
+                <span className="line-clamp-2 text-sm font-semibold text-slate-950">
                   {caseRecord.title}
                 </span>
                 <span className="mt-1 block text-xs text-slate-500">
@@ -437,11 +437,11 @@ function CaseFocusButton({
       className={clsx(
         "w-full rounded-md border p-3 text-left transition",
         selected
-          ? "border-cyan-300/45 bg-cyan-300/12"
-          : "border-white/10 bg-white/[0.03] hover:border-white/20"
+          ? "border-teal-300 bg-teal-50"
+          : "border-slate-200 bg-white hover:bg-slate-50"
       )}
     >
-      <span className="line-clamp-1 text-sm font-semibold text-white">
+      <span className="line-clamp-1 text-sm font-semibold text-slate-950">
         {caseRecord.title}
       </span>
       <span className="mt-1 block text-xs text-slate-500">
@@ -454,7 +454,7 @@ function CaseFocusButton({
 function SelectedMapCase({ caseRecord }: { caseRecord: CaseRecord | null }) {
   if (!caseRecord) {
     return (
-      <div className="rounded-lg border border-white/10 bg-white/[0.03] p-4 text-sm text-slate-400">
+      <div className="rounded-lg border border-slate-200 bg-slate-50 p-4 text-sm text-slate-600">
         Select a mapped record to inspect source and coordinate details.
       </div>
     );
@@ -464,10 +464,10 @@ function SelectedMapCase({ caseRecord }: { caseRecord: CaseRecord | null }) {
 
   return (
     <div>
-      <p className="text-xs font-semibold uppercase tracking-[0.18em] text-cyan-100">
+      <p className="text-xs font-semibold uppercase tracking-[0.14em] text-teal-700">
         Selected case
       </p>
-      <h2 className="mt-2 font-[var(--font-space)] text-xl font-semibold leading-tight text-white">
+      <h2 className="mt-2 font-[var(--font-space)] text-xl font-semibold leading-tight text-slate-950">
         {caseRecord.title}
       </h2>
       <dl className="mt-4 grid grid-cols-2 gap-2 text-sm">
@@ -483,13 +483,13 @@ function SelectedMapCase({ caseRecord }: { caseRecord: CaseRecord | null }) {
           }
         />
       </dl>
-      <p className="mt-4 line-clamp-4 text-sm leading-6 text-slate-400">
+      <p className="mt-4 line-clamp-4 text-sm leading-6 text-slate-600">
         {caseRecord.summary}
       </p>
       <div className="mt-5 grid gap-2">
         <Link
           href={`/case/${caseRecord.id}`}
-          className="rounded-md bg-cyan-300 px-4 py-3 text-center text-sm font-bold text-slate-950 transition hover:bg-cyan-200"
+          className="rounded-md bg-blue-600 px-4 py-3 text-center text-sm font-bold text-white transition hover:bg-blue-700"
         >
           Open case
         </Link>
@@ -497,7 +497,7 @@ function SelectedMapCase({ caseRecord }: { caseRecord: CaseRecord | null }) {
           href={sourceHref}
           target="_blank"
           rel="noreferrer"
-          className="rounded-md border border-white/10 bg-white/[0.04] px-4 py-3 text-center text-sm font-semibold text-slate-100 transition hover:border-white/20 hover:text-white"
+          className="rounded-md border border-teal-200 bg-teal-50 px-4 py-3 text-center text-sm font-semibold text-teal-700 transition hover:bg-teal-100"
         >
           Official source
         </a>
@@ -508,9 +508,9 @@ function SelectedMapCase({ caseRecord }: { caseRecord: CaseRecord | null }) {
 
 function MapMeta({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-md border border-white/10 bg-white/[0.035] p-3">
-      <dt className="text-xs uppercase tracking-[0.14em] text-slate-500">{label}</dt>
-      <dd className="mt-1 line-clamp-2 text-slate-200">{value}</dd>
+    <div className="rounded-md border border-slate-200 bg-slate-50 p-3">
+      <dt className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">{label}</dt>
+      <dd className="mt-1 line-clamp-2 text-slate-800">{value}</dd>
     </div>
   );
 }

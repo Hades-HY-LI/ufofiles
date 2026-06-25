@@ -27,7 +27,7 @@ export default function MapPage() {
       />
       <Suspense
         fallback={
-          <div className="flex min-h-[36rem] items-center justify-center rounded-lg border border-white/10 bg-slate-950/70 text-slate-400">
+          <div className="flex min-h-[36rem] items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-500 shadow-sm">
             Loading map...
           </div>
         }

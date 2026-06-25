@@ -18,13 +18,13 @@ export default function AboutPage() {
   return (
     <main className="mx-auto max-w-4xl px-4 py-12 sm:px-6 lg:px-8">
       <JsonLd data={buildDatasetJsonLd(syncMetadata)} />
-      <p className="text-xs font-semibold uppercase tracking-[0.18em] text-cyan-100">
+      <p className="text-xs font-semibold uppercase tracking-[0.14em] text-teal-700">
         About
       </p>
-      <h1 className="mt-3 font-[var(--font-space)] text-4xl font-semibold text-white">
+      <h1 className="mt-3 font-[var(--font-space)] text-4xl font-semibold text-slate-950">
         A fan-built archive for official UFO/UAP releases.
       </h1>
-      <div className="mt-8 space-y-6 text-base leading-8 text-slate-300">
+      <div className="mt-8 space-y-6 text-base leading-8 text-slate-700">
         <p>
           UFO Files Archive is a non-commercial project for exploring official
           UAP/UFO materials through search, timeline, map, and case detail
@@ -36,7 +36,7 @@ export default function AboutPage() {
           organization, summaries, tags, and interface affordances, but every
           case must retain a source link back to the official release.
         </p>
-        <div className="rounded-lg border border-cyan-300/25 bg-cyan-300/10 p-5 text-cyan-50">
+        <div className="rounded-lg border border-teal-200 bg-teal-50 p-5 text-teal-900">
           This is an independent fan archive and is not affiliated with the U.S.
           government.
         </div>
@@ -44,35 +44,35 @@ export default function AboutPage() {
           href="https://www.war.gov/ufo/"
           target="_blank"
           rel="noreferrer"
-          className="inline-flex items-center gap-2 rounded-md bg-cyan-300 px-4 py-3 text-sm font-bold text-slate-950 hover:bg-cyan-200"
+          className="inline-flex items-center gap-2 rounded-md bg-blue-600 px-4 py-3 text-sm font-bold text-white hover:bg-blue-700"
         >
           Official PURSUE source <ExternalLink size={16} />
         </a>
       </div>
-      <div className="mt-10 rounded-lg border border-white/10 bg-slate-950/60 p-6">
-        <h2 className="font-[var(--font-space)] text-2xl font-semibold text-white">
+      <div className="mt-10 rounded-lg border border-slate-200 bg-white p-6 shadow-sm">
+        <h2 className="font-[var(--font-space)] text-2xl font-semibold text-slate-950">
           Launch scope
         </h2>
-        <p className="mt-3 text-sm leading-6 text-slate-400">
+        <p className="mt-3 text-sm leading-6 text-slate-600">
           The MVP intentionally excludes accounts, comments, submissions, and
           community features. The first job is to make the official archive
           fast, clear, and useful.
         </p>
         <Link
           href="/explore"
-          className="mt-5 inline-flex text-sm font-semibold text-cyan-100 hover:text-white"
+          className="mt-5 inline-flex text-sm font-semibold text-blue-700 hover:text-blue-950"
         >
           Start exploring
         </Link>
       </div>
       <section
         id="license-and-attribution"
-        className="mt-10 rounded-lg border border-white/10 bg-slate-950/60 p-6"
+        className="mt-10 rounded-lg border border-slate-200 bg-white p-6 shadow-sm"
       >
-        <h2 className="font-[var(--font-space)] text-2xl font-semibold text-white">
+        <h2 className="font-[var(--font-space)] text-2xl font-semibold text-slate-950">
           License and attribution
         </h2>
-        <div className="mt-4 space-y-4 text-sm leading-6 text-slate-400">
+        <div className="mt-4 space-y-4 text-sm leading-6 text-slate-600">
           <p>
             The project code is released under the MIT License in the public
             repository license file.

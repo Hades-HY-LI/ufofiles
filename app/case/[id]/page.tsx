@@ -57,7 +57,7 @@ export default async function CasePage({ params, searchParams }: CasePageProps) 
       />
       <Link
         href={backHref}
-        className="inline-flex items-center gap-2 text-sm font-semibold text-slate-400 hover:text-white"
+        className="inline-flex items-center gap-2 text-sm font-semibold text-slate-500 hover:text-slate-950"
       >
         <ArrowLeft size={16} /> Back to Explore
       </Link>
@@ -67,10 +67,10 @@ export default async function CasePage({ params, searchParams }: CasePageProps) 
             <TagBadge tone="cyan">{caseRecord.agency}</TagBadge>
             <TagBadge tone="violet">{caseRecord.type}</TagBadge>
           </div>
-          <h1 className="mt-5 font-[var(--font-space)] text-4xl font-semibold leading-tight text-white sm:text-5xl">
+          <h1 className="mt-5 font-[var(--font-space)] text-4xl font-semibold leading-tight text-slate-950 sm:text-5xl">
             {caseRecord.title}
           </h1>
-          <p className="mt-5 text-base leading-8 text-slate-300">
+          <p className="mt-5 text-base leading-8 text-slate-700">
             {caseRecord.summary}
           </p>
           <div className="mt-6 flex flex-wrap gap-2">
@@ -86,40 +86,40 @@ export default async function CasePage({ params, searchParams }: CasePageProps) 
               href={sourceHref}
               target="_blank"
               rel="noreferrer"
-              className="inline-flex items-center gap-2 rounded-md bg-cyan-300 px-4 py-3 text-sm font-bold text-slate-950 transition hover:bg-cyan-200"
+              className="inline-flex items-center gap-2 rounded-md bg-blue-600 px-4 py-3 text-sm font-bold text-white transition hover:bg-blue-700"
             >
               Open official source <ExternalLink size={16} />
             </a>
             {canMap ? (
               <Link
                 href={`/map?case=${caseRecord.id}`}
-                className="inline-flex items-center gap-2 rounded-md border border-emerald-300/30 bg-emerald-300/10 px-4 py-3 text-sm font-bold text-emerald-100 transition hover:bg-emerald-300/20"
+                className="inline-flex items-center gap-2 rounded-md border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-bold text-emerald-700 transition hover:bg-emerald-100"
               >
                 Show on the map <LocateFixed size={16} />
               </Link>
             ) : (
               <Link
                 href="/map"
-                className="inline-flex items-center gap-2 rounded-md border border-amber-300/30 bg-amber-300/10 px-4 py-3 text-sm font-bold text-amber-100 transition hover:bg-amber-300/20"
+                className="inline-flex items-center gap-2 rounded-md border border-orange-200 bg-orange-50 px-4 py-3 text-sm font-bold text-orange-700 transition hover:bg-orange-100"
               >
                 Listed as unmapped <LocateFixed size={16} />
               </Link>
             )}
             <Link
               href="/graph"
-              className="inline-flex items-center gap-2 rounded-md border border-fuchsia-300/30 bg-fuchsia-300/10 px-4 py-3 text-sm font-bold text-fuchsia-100 transition hover:bg-fuchsia-300/20"
+              className="inline-flex items-center gap-2 rounded-md border border-pink-200 bg-pink-50 px-4 py-3 text-sm font-bold text-pink-700 transition hover:bg-pink-100"
             >
               View graph <GitBranch size={16} />
             </Link>
             <Link
               href="/timeline"
-              className="inline-flex items-center gap-2 rounded-md border border-white/15 bg-white/5 px-4 py-3 text-sm font-bold text-slate-100 transition hover:bg-white/10"
+              className="inline-flex items-center gap-2 rounded-md border border-slate-200 bg-white px-4 py-3 text-sm font-bold text-slate-700 transition hover:bg-slate-50"
             >
               Timeline <CalendarDays size={16} />
             </Link>
           </div>
           {caseRecord.tags.includes("bundle") ? (
-            <div className="mt-6 rounded-lg border border-cyan-300/20 bg-cyan-300/10 p-4 text-sm leading-6 text-cyan-50">
+            <div className="mt-6 rounded-lg border border-teal-200 bg-teal-50 p-4 text-sm leading-6 text-teal-900">
               This record was derived from an official release bundle. The
               archive preserves the official bundle URL and ZIP entry metadata
               without republishing large government media files.
@@ -131,7 +131,7 @@ export default async function CasePage({ params, searchParams }: CasePageProps) 
         </aside>
       </div>
       <section className="mt-14">
-        <h2 className="font-[var(--font-space)] text-2xl font-semibold text-white">
+        <h2 className="font-[var(--font-space)] text-2xl font-semibold text-slate-950">
           Related cases
         </h2>
         {related.length ? (
@@ -141,7 +141,7 @@ export default async function CasePage({ params, searchParams }: CasePageProps) 
             ))}
           </div>
         ) : (
-          <p className="mt-3 text-sm text-slate-400">
+          <p className="mt-3 text-sm text-slate-600">
             Related records will appear as the official-source archive grows.
           </p>
         )}
