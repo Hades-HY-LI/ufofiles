@@ -99,10 +99,39 @@ async function main() {
     }
   }
 
+  const datedReleases = releases
+    .filter((release): release is typeof release & { releaseDate: string } => Boolean(release.releaseDate))
+    .sort((a, b) => a.releaseDate.localeCompare(b.releaseDate));
+  for (const [index, release] of datedReleases.entries()) {
+    const expectedId = `pursue-release-${String(index + 1).padStart(2, "0")}`;
+    if (release.id !== expectedId) {
+      errors.push(
+        `release ${release.id} is out of sequence for ${release.releaseDate}; expected ${expectedId}`
+      );
+    }
+    const expectedTag = expectedId.replace(/^pursue-/, "");
+    const matchingCases = cases.filter((caseRecord) => caseRecord.releaseDate === release.releaseDate);
+    for (const caseRecord of matchingCases) {
+      if (!caseRecord.tags.includes(expectedTag)) {
+        errors.push(`case ${caseRecord.id} is missing derived release tag ${expectedTag}`);
+      }
+      const expectedQuery = `releaseDate=Release+${String(index + 1).padStart(2, "0")}`;
+      if (caseRecord.tags.includes("csv") && !caseRecord.sourceUrl.includes(expectedQuery)) {
+        errors.push(`case ${caseRecord.id} sourceUrl is missing ${expectedQuery}`);
+      }
+    }
+  }
+
   if (metadata.totalRecords !== cases.length) {
     errors.push(
       `sync metadata totalRecords is ${metadata.totalRecords}, but cases.json has ${cases.length}`
     );
+  }
+  if (metadata.status === "fresh" && metadata.sourceError) {
+    errors.push("fresh sync metadata must not contain sourceError");
+  }
+  if (metadata.status !== "fresh" && metadata.lastAttemptedAt && !metadata.sourceError) {
+    errors.push(`${metadata.status} sync metadata is missing sourceError`);
   }
 
   const caseIds = new Set(cases.map((item) => item.id));
@@ -178,7 +207,11 @@ function assertApprovedHost(
   label: string,
   errors: string[]
 ) {
-  const host = new URL(url).hostname.toLowerCase();
+  const parsed = new URL(url);
+  const host = parsed.hostname.toLowerCase();
+  if (parsed.protocol !== "https:") errors.push(`${label} must use HTTPS`);
+  if (parsed.username || parsed.password) errors.push(`${label} must not contain credentials`);
+  if (parsed.port && parsed.port !== "443") errors.push(`${label} uses disallowed port ${parsed.port}`);
   if (!approvedHosts.has(host)) {
     errors.push(`${label} uses unapproved host ${host}`);
   }

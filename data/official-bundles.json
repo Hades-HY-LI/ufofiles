@@ -24,6 +24,54 @@
       "agency": "Department of War",
       "summary": "Official PURSUE Release 02 video bundle linked from the public government UAP release portal.",
       "sourcePageUrl": "https://www.war.gov/ufo/"
+    },
+    {
+      "id": "release-03-document-bundle",
+      "title": "PURSUE Release 03 document bundle",
+      "url": "https://www.war.gov/medialink/ufo/061226/release_03/release_03_documents.zip",
+      "releaseDate": "2026-06-12",
+      "releaseTag": "release-03",
+      "type": "document",
+      "mode": "aggregate",
+      "agency": "Department of War",
+      "summary": "Official PURSUE Release 03 document bundle linked from the public government UAP release portal.",
+      "sourcePageUrl": "https://www.war.gov/News/Releases/Release/Article/4515408/department-of-war-publishes-third-release-of-unidentified-anomalous-phenomena-f/"
+    },
+    {
+      "id": "release-03-video-bundle",
+      "title": "PURSUE Release 03 video bundle",
+      "url": "https://d34w7g4gy10iej.cloudfront.net/release_03/uap_videos_061226.zip",
+      "releaseDate": "2026-06-12",
+      "releaseTag": "release-03",
+      "type": "video",
+      "mode": "zip-entries",
+      "agency": "Department of War",
+      "summary": "Official PURSUE Release 03 video bundle linked from the public government UAP release portal.",
+      "sourcePageUrl": "https://www.war.gov/News/Releases/Release/Article/4515408/department-of-war-publishes-third-release-of-unidentified-anomalous-phenomena-f/"
+    },
+    {
+      "id": "release-04-document-bundle",
+      "title": "PURSUE Release 04 document bundle",
+      "url": "https://www.war.gov/medialink/ufo/071026/release_04/release_04_documents_071026.zip",
+      "releaseDate": "2026-07-10",
+      "releaseTag": "release-04",
+      "type": "document",
+      "mode": "aggregate",
+      "agency": "Department of War",
+      "summary": "Official PURSUE Release 04 document bundle linked from the public government UAP release portal.",
+      "sourcePageUrl": "https://www.war.gov/News/Releases/Release/Article/4539898/department-of-war-publishes-fourth-release-of-unidentified-anomalous-phenomena/"
+    },
+    {
+      "id": "release-04-video-bundle",
+      "title": "PURSUE Release 04 video bundle",
+      "url": "https://d34w7g4gy10iej.cloudfront.net/release_04/uap_release04_videos_071026.zip",
+      "releaseDate": "2026-07-10",
+      "releaseTag": "release-04",
+      "type": "video",
+      "mode": "zip-entries",
+      "agency": "Department of War",
+      "summary": "Official PURSUE Release 04 video bundle linked from the public government UAP release portal.",
+      "sourcePageUrl": "https://www.war.gov/News/Releases/Release/Article/4539898/department-of-war-publishes-fourth-release-of-unidentified-anomalous-phenomena/"
     }
   ]
 }

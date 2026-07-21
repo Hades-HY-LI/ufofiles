@@ -12,7 +12,8 @@
     "discover:war-bundles": "tsx scripts/discover-war-ufo-bundles.ts",
     "sync:war": "tsx scripts/sync-war-ufo.ts",
     "validate:data": "tsx scripts/validate-data.ts",
-    "test": "npm run typecheck && npm run validate:data"
+    "test:sync": "node --import tsx --test scripts/sync-war-ufo.test.ts",
+    "test": "npm run typecheck && npm run test:sync && npm run validate:data"
   },
   "overrides": {
     "postcss": "8.5.14"

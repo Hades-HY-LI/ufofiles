@@ -1,16 +1,33 @@
 import * as cheerio from "cheerio";
+import { createHash } from "node:crypto";
 import { readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
-import { fileURLToPath } from "node:url";
+import { fileURLToPath, pathToFileURL } from "node:url";
 import type { CaseRecord, MediaType, ReleaseRecord, SyncMetadata } from "../lib/types";
+import {
+  isValidatedHttpsUrl,
+  readBytesBounded,
+  readTextBounded,
+  safeFetch,
+  validatedHttpsUrl
+} from "./war-ufo-network";
 
 const SOURCE_URL = "https://www.war.gov/ufo/";
 const CSV_URL = "https://www.war.gov/Portals/1/Interactive/2026/UFO/uap-data.csv";
+const WAR_HOSTS = new Set(["war.gov", "www.war.gov"]);
+const BUNDLE_HOSTS = new Set([...WAR_HOSTS, "d34w7g4gy10iej.cloudfront.net"]);
+const IDENTITY_MEDIA_HOSTS = new Set([...BUNDLE_HOSTS, "www.dvidshub.net"]);
+const MAX_CSV_BYTES = 10 * 1024 * 1024;
+const MAX_HTML_BYTES = 5 * 1024 * 1024;
+const MAX_ZIP_TAIL_BYTES = 1024 * 1024;
+const MAX_ZIP_BYTES = 100 * 1024 * 1024 * 1024;
+const MAX_ZIP_ENTRIES = 100_000;
+const MAX_CENTRAL_DIRECTORY_BYTES = 64 * 1024 * 1024;
 const FORCE_FALLBACK = process.env.WAR_UFO_FORCE_FALLBACK === "1";
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const root = path.resolve(__dirname, "..");
 
-type Discovery = {
+export type Discovery = {
   id?: string;
   title: string;
   sourceUrl: string;
@@ -75,44 +92,52 @@ async function main() {
 
   let discoveries: Discovery[];
   let status: SyncMetadata["status"] = "fresh";
+  const attemptedAt = new Date().toISOString();
+  const previousSuccessfulAt =
+    previousMetadata.lastSuccessfulAt ??
+    (previousMetadata.status === "fresh" ? previousMetadata.lastSyncedAt : undefined);
+  let successfulAt: string | undefined;
+  let csvSha256: string | undefined;
+  let csvLastModified: string | undefined;
+  let sourceError: string | undefined;
   try {
-    const csv = await fetchOfficialCsv();
-    discoveries = discoverCsvRecords(csv);
+    const csvResult = await fetchOfficialCsv();
+    discoveries = discoverCsvRecords(csvResult.text);
+    assertCumulativeSnapshot(previousCases, discoveries);
+    successfulAt = attemptedAt;
+    csvSha256 = createHash("sha256").update(csvResult.text).digest("hex");
+    csvLastModified = csvResult.lastModified;
     console.log(`Read ${discoveries.length} official records from ${CSV_URL}.`);
   } catch (error) {
+    const csvError = errorMessage(error);
     console.warn(
-      `Official CSV unavailable; trying live portal HTML. ${
-        error instanceof Error ? error.message : String(error)
-      }`
+      `Official CSV unavailable; trying live portal HTML. ${csvError}`
     );
     try {
       const html = await fetchSource();
       discoveries = discoverRecords(html);
+      status = "partial";
+      sourceError = `CSV unavailable: ${csvError}`;
     } catch (portalError) {
+      const portalErrorMessage = errorMessage(portalError);
       discoveries = await loadManifestDiscoveries();
       status = discoveries.length ? "partial" : "failed";
+      sourceError = `CSV unavailable: ${csvError}; portal unavailable: ${portalErrorMessage}`;
       if (!discoveries.length) {
-        const metadata: SyncMetadata = {
-          lastSyncedAt: new Date().toISOString(),
-          sourceUrl: SOURCE_URL,
-          totalRecords: previousCases.length,
-          newRecordCount: 0,
-          changedRecordCount: 0,
-          latestNewCaseIds: [],
-          latestChangedCaseIds: [],
-          status
-        };
+        const metadata = buildMetadata(previousCases, previousCases, status, {
+          attemptedAt,
+          lastSuccessfulAt: previousSuccessfulAt,
+          sourceError
+        });
         await writeJson("data/sync-metadata.json", metadata);
         console.warn(
-          `Sync source unavailable; preserved ${previousCases.length} existing records. ${
-            portalError instanceof Error ? portalError.message : String(portalError)
-          }`
+          `Sync source unavailable; preserved ${previousCases.length} existing records. ${portalErrorMessage}`
         );
         return;
       }
       console.warn(
         `Live source unavailable; using manifest fallback with ${discoveries.length} official URLs. ${
-          portalError instanceof Error ? portalError.message : String(portalError)
+          portalErrorMessage
         }`
       );
     }
@@ -121,21 +146,25 @@ async function main() {
     status === "partial"
       ? mergePartialFallbackCases(previousCases, discoveries)
       : mergeCases(previousCases, discoveries);
-  const releases = buildReleases(previousReleases, mergedCases);
-  const computedMetadata = buildMetadata(previousCases, mergedCases, status);
-  let metadata = computedMetadata;
-  let preservedMetadata = false;
-  const releaseChanged = JSON.stringify(previousReleases) !== JSON.stringify(releases);
-
-  if (
-    !releaseChanged &&
-    computedMetadata.newRecordCount === 0 &&
-    computedMetadata.changedRecordCount === 0 &&
-    (previousMetadata.status === status || status === "partial")
-  ) {
-    metadata = previousMetadata;
-    preservedMetadata = true;
-  }
+  const releases = buildReleases(mergedCases);
+  const computedMetadata = buildMetadata(previousCases, mergedCases, status, {
+    attemptedAt,
+    lastSuccessfulAt: successfulAt ?? previousSuccessfulAt,
+    csvSha256,
+    csvLastModified,
+    sourceError
+  });
+  const preserveFreshMetadata = shouldPreserveFreshMetadata({
+    status,
+    previousMetadata,
+    computedMetadata,
+    previousCases,
+    nextCases: mergedCases,
+    previousReleases,
+    nextReleases: releases,
+    csvSha256
+  });
+  const metadata = preserveFreshMetadata ? previousMetadata : computedMetadata;
 
   await Promise.all([
     writeJson("data/cases.json", mergedCases),
@@ -145,32 +174,39 @@ async function main() {
 
   console.log(
     `Synced ${mergedCases.length} records from ${SOURCE_URL}: ${computedMetadata.newRecordCount} new, ${computedMetadata.changedRecordCount} changed, status ${metadata.status}${
-      preservedMetadata ? "; preserved previous metadata to avoid a timestamp-only commit" : ""
+      preserveFreshMetadata ? "; preserved metadata for identical fresh input" : ""
     }.`
   );
 
 }
 
-async function fetchOfficialCsv() {
+async function fetchOfficialCsv(): Promise<{ text: string; lastModified?: string }> {
   if (FORCE_FALLBACK) {
     throw new Error("WAR_UFO_FORCE_FALLBACK requested");
   }
-  const response = await fetch(CSV_URL, {
+  const response = await safeFetch(CSV_URL, {
+    allowedHosts: WAR_HOSTS,
+    cache: "no-store",
     headers: {
-      accept: "text/csv,application/octet-stream,text/plain"
+      accept: "text/csv,application/octet-stream,text/plain",
+      "cache-control": "no-cache"
     }
   });
   if (!response.ok) {
     throw new Error(`Failed to fetch ${CSV_URL}: ${response.status}`);
   }
-  return response.text();
+  return {
+    text: await readTextBounded(response, MAX_CSV_BYTES),
+    lastModified: response.headers.get("last-modified") ?? undefined
+  };
 }
 
 async function fetchSource() {
   if (FORCE_FALLBACK) {
     throw new Error("WAR_UFO_FORCE_FALLBACK requested");
   }
-  const response = await fetch(SOURCE_URL, {
+  const response = await safeFetch(SOURCE_URL, {
+    allowedHosts: WAR_HOSTS,
     headers: {
       "user-agent":
         "UFO Files Archive non-commercial fan archive sync (+https://www.war.gov/ufo/)"
@@ -179,12 +215,14 @@ async function fetchSource() {
   if (!response.ok) {
     throw new Error(`Failed to fetch ${SOURCE_URL}: ${response.status}`);
   }
-  return response.text();
+  return readTextBounded(response, MAX_HTML_BYTES);
 }
 
-function discoverCsvRecords(csv: string): Discovery[] {
-  const [header, ...rows] = parseCsv(csv);
-  const column = (name: string) => header.indexOf(name);
+export function discoverCsvRecords(csv: string): Discovery[] {
+  const [rawHeader, ...rows] = parseCsv(csv);
+  if (!rawHeader) throw new Error("Official CSV is empty");
+  const header = rawHeader.map(normalizeCsvHeader);
+  const column = (name: string) => header.indexOf(normalizeCsvHeader(name));
   const index = {
     redaction: column("Redaction"),
     releaseDate: column("Release Date"),
@@ -200,21 +238,38 @@ function discoverCsvRecords(csv: string): Discovery[] {
     virin: column("Image VIRIN")
   };
 
-  return rows
-    .filter((row) => row.some(Boolean))
-    .map((row) => {
+  const requiredColumns = ["Release Date", "Title", "Type", "Agency"];
+  const missingColumns = requiredColumns.filter((name) => column(name) < 0);
+  if (missingColumns.length) {
+    throw new Error(`Official CSV is missing required column(s): ${missingColumns.join(", ")}`);
+  }
+
+  const populatedRows = rows.filter((row) => row.some((value) => value.trim()));
+  if (!populatedRows.length) throw new Error("Official CSV contains no records");
+  const normalizedReleaseDates = populatedRows.map((row, rowIndex) => {
+    const rawDate = valueAt(row, index.releaseDate);
+    const date = normalizeReleaseDate(rawDate);
+    if (!date || !isSaneReleaseDate(date)) {
+      throw new Error(`Official CSV row ${rowIndex + 2} has invalid Release Date: ${rawDate || "(blank)"}`);
+    }
+    return date;
+  });
+  const releaseTags = buildReleaseTagMap(normalizedReleaseDates);
+
+  const discoveries = populatedRows.map((row, rowIndex) => {
       const title = cleanTitle(valueAt(row, index.title)) || "Official UAP record";
-      const releaseDate = normalizeDate(valueAt(row, index.releaseDate)) ?? null;
+      const releaseDate = normalizedReleaseDates[rowIndex];
       const type = mediaTypeFromCsv(valueAt(row, index.type));
       const assetUrl = valueAt(row, index.assetUrl);
       const imageUrl = valueAt(row, index.imageUrl);
-      const dvidsId = valueAt(row, index.dvidsId);
-      const releaseTag = releaseTagFromDate(releaseDate);
-      const sourceUrl = warRecordUrl(title, releaseDate);
+      const dvidsIds = parseDvidsIds(valueAt(row, index.dvidsId));
+      const releaseTag = releaseTags.get(releaseDate);
+      if (!releaseTag) throw new Error(`No release tag generated for ${releaseDate}`);
+      const sourceUrl = warRecordUrl(title, releaseTag);
       const mediaUrl =
         toOfficialAssetUrl(assetUrl) ??
         toOfficialAssetUrl(imageUrl) ??
-        dvidsEmbedUrl(dvidsId, type);
+        dvidsEmbedUrl(dvidsIds[0], type);
       const locationName = normalizeLocation(valueAt(row, index.location));
 
       return {
@@ -223,7 +278,7 @@ function discoverCsvRecords(csv: string): Discovery[] {
         sourceUrl,
         mediaUrl,
         releaseDate,
-        incidentDate: normalizeDate(valueAt(row, index.incidentDate)),
+        incidentDate: normalizeIncidentDate(valueAt(row, index.incidentDate)),
         locationName,
         latitude: coordinatesForLocation(locationName)?.latitude ?? null,
         longitude: coordinatesForLocation(locationName)?.longitude ?? null,
@@ -240,11 +295,20 @@ function discoverCsvRecords(csv: string): Discovery[] {
           releaseTag,
           type,
           valueAt(row, index.redaction).toLowerCase() === "true" ? "redacted" : "",
-          dvidsId ? "dvids" : "",
+          dvidsIds.length ? "dvids" : "",
           valueAt(row, index.virin) ? "virin" : ""
         ].filter(Boolean)
       };
     });
+
+  const ids = new Set<string>();
+  for (const discovery of discoveries) {
+    if (!discovery.id || ids.has(discovery.id)) {
+      throw new Error(`Official CSV produced duplicate record id: ${discovery.id ?? "(blank)"}`);
+    }
+    ids.add(discovery.id);
+  }
+  return discoveries;
 }
 
 function discoverRecords(html: string): Discovery[] {
@@ -325,14 +389,28 @@ function discoverRecords(html: string): Discovery[] {
   return [...discoveries.values()];
 }
 
-function mergeCases(previousCases: CaseRecord[], discoveries: Discovery[]) {
+export function mergeCases(previousCases: CaseRecord[], discoveries: Discovery[]) {
   const previousById = new Map(previousCases.map((item) => [item.id, item]));
+  const previousByOfficialKey = uniqueOfficialRecordIndex(previousCases);
+  const discoveriesByOfficialKey = uniqueOfficialRecordIndex(discoveries);
   const merged = new Map<string, CaseRecord>();
 
   for (const discovery of discoveries) {
-    const id = stableId(discovery);
-    const previous = previousById.get(id);
-    merged.set(id, caseFromDiscovery(discovery, previous));
+    const generatedId = stableId(discovery);
+    let id = generatedId;
+    let previous = previousById.get(generatedId);
+
+    if (!previous) {
+      const officialKey = officialRecordKey(discovery);
+      const priorMatch = officialKey ? previousByOfficialKey.get(officialKey) : undefined;
+      const incomingMatch = officialKey ? discoveriesByOfficialKey.get(officialKey) : undefined;
+      if (priorMatch && incomingMatch === discovery && !merged.has(priorMatch.id)) {
+        id = priorMatch.id;
+        previous = priorMatch;
+      }
+    }
+
+    merged.set(id, caseFromDiscovery(discovery, previous, id));
   }
 
   return sortCases([...merged.values()]);
@@ -364,8 +442,11 @@ function mergePartialFallbackCases(previousCases: CaseRecord[], discoveries: Dis
   return sortCases([...merged.values()]);
 }
 
-function caseFromDiscovery(discovery: Discovery, previous?: CaseRecord): CaseRecord {
-  const id = stableId(discovery);
+function caseFromDiscovery(
+  discovery: Discovery,
+  previous?: CaseRecord,
+  id = stableId(discovery)
+): CaseRecord {
   const coordinates = coordinatesForLocation(discovery.locationName);
 
   return {
@@ -400,17 +481,41 @@ function caseFromDiscovery(discovery: Discovery, previous?: CaseRecord): CaseRec
   };
 }
 
+type OfficialIdentityRecord = {
+  title: string;
+  releaseDate: string | null;
+};
+
+function uniqueOfficialRecordIndex<T extends OfficialIdentityRecord>(records: T[]) {
+  const index = new Map<string, T | null>();
+  for (const record of records) {
+    const key = officialRecordKey(record);
+    if (!key) continue;
+    index.set(key, index.has(key) ? null : record);
+  }
+  return index;
+}
+
+function officialRecordKey(record: OfficialIdentityRecord) {
+  if (!record.releaseDate) return null;
+  const identifier = record.title.match(
+    /\b([A-Z][A-Z0-9]{1,9})[-_\s]+UAP[-_\s]+([A-Z]{0,3}\d+[A-Z]?)\b/i
+  );
+  if (!identifier) return null;
+  return `${record.releaseDate}:${identifier[1].toUpperCase()}-UAP-${identifier[2].toUpperCase()}`;
+}
+
 function sortCases(cases: CaseRecord[]) {
   return cases.sort((a, b) => (b.releaseDate ?? "").localeCompare(a.releaseDate ?? ""));
 }
 
-function buildReleases(previousReleases: ReleaseRecord[], cases: CaseRecord[]) {
-  const map = new Map(previousReleases.map((item) => [item.id, item]));
+export function buildReleases(cases: CaseRecord[]) {
   const grouped = new Map<string, CaseRecord[]>();
+  const releases: ReleaseRecord[] = [];
   for (const caseRecord of cases) {
     const releaseTag =
       caseRecord.tags.find((tag) => /^release-\d+$/i.test(tag)) ??
-      releaseTagFromDate(caseRecord.releaseDate);
+      releaseTagForCases(cases, caseRecord.releaseDate);
     grouped.set(releaseTag, [...(grouped.get(releaseTag) ?? []), caseRecord]);
   }
 
@@ -425,21 +530,32 @@ function buildReleases(previousReleases: ReleaseRecord[], cases: CaseRecord[]) {
       notes:
         "Automated sync record for official files detected on the PURSUE portal and official linked bundles."
     };
-    map.set(release.id, { ...map.get(release.id), ...release });
+    releases.push(release);
   }
 
-  return [...map.values()];
+  return releases.sort((a, b) => (a.releaseDate ?? "").localeCompare(b.releaseDate ?? ""));
 }
 
-function releaseTagFromDate(releaseDate: string | null | undefined) {
-  if (releaseDate === "2026-05-22") return "release-02";
-  return "release-01";
+function releaseTagForCases(cases: CaseRecord[], releaseDate: string | null | undefined) {
+  if (!releaseDate) return "release-unknown";
+  return buildReleaseTagMap(
+    cases.map((caseRecord) => caseRecord.releaseDate).filter((date): date is string => Boolean(date))
+  ).get(releaseDate) ?? "release-unknown";
 }
 
-function buildMetadata(
+type MetadataHealth = {
+  attemptedAt: string;
+  lastSuccessfulAt?: string;
+  csvSha256?: string;
+  csvLastModified?: string;
+  sourceError?: string;
+};
+
+export function buildMetadata(
   previousCases: CaseRecord[],
   nextCases: CaseRecord[],
-  status: SyncMetadata["status"]
+  status: SyncMetadata["status"],
+  health: MetadataHealth
 ): SyncMetadata {
   const previousById = new Map(previousCases.map((item) => [item.id, item]));
   const latestNewCaseIds: string[] = [];
@@ -457,8 +573,14 @@ function buildMetadata(
   }
 
   return {
-    lastSyncedAt: new Date().toISOString(),
+    lastSyncedAt: health.attemptedAt,
+    lastAttemptedAt: health.attemptedAt,
+    ...(health.lastSuccessfulAt ? { lastSuccessfulAt: health.lastSuccessfulAt } : {}),
     sourceUrl: SOURCE_URL,
+    sourceCsvUrl: CSV_URL,
+    ...(health.csvSha256 ? { sourceCsvSha256: health.csvSha256 } : {}),
+    ...(health.csvLastModified ? { sourceCsvLastModified: health.csvLastModified } : {}),
+    ...(health.sourceError ? { sourceError: health.sourceError.slice(0, 1000) } : {}),
     totalRecords: nextCases.length,
     newRecordCount: latestNewCaseIds.length,
     changedRecordCount: latestChangedCaseIds.length,
@@ -466,6 +588,42 @@ function buildMetadata(
     latestChangedCaseIds,
     status
   };
+}
+
+type FreshMetadataDecision = {
+  status: SyncMetadata["status"];
+  previousMetadata: SyncMetadata;
+  computedMetadata: SyncMetadata;
+  previousCases: CaseRecord[];
+  nextCases: CaseRecord[];
+  previousReleases: ReleaseRecord[];
+  nextReleases: ReleaseRecord[];
+  csvSha256?: string;
+};
+
+export function shouldPreserveFreshMetadata({
+  status,
+  previousMetadata,
+  computedMetadata,
+  previousCases,
+  nextCases,
+  previousReleases,
+  nextReleases,
+  csvSha256
+}: FreshMetadataDecision) {
+  return (
+    status === "fresh" &&
+    previousMetadata.status === "fresh" &&
+    computedMetadata.status === "fresh" &&
+    computedMetadata.newRecordCount === 0 &&
+    computedMetadata.changedRecordCount === 0 &&
+    JSON.stringify(previousCases) === JSON.stringify(nextCases) &&
+    JSON.stringify(previousReleases) === JSON.stringify(nextReleases) &&
+    Boolean(csvSha256) &&
+    previousMetadata.sourceUrl === SOURCE_URL &&
+    previousMetadata.sourceCsvUrl === CSV_URL &&
+    previousMetadata.sourceCsvSha256 === csvSha256
+  );
 }
 
 async function loadManifestDiscoveries(): Promise<Discovery[]> {
@@ -477,8 +635,8 @@ async function loadManifestDiscoveries(): Promise<Discovery[]> {
       title: record.title,
       sourceUrl: record.sourceUrl ?? manifest.sourceUrl ?? SOURCE_URL,
       mediaUrl: record.mediaUrl,
-      releaseDate: normalizeDate(record.releaseDate) ?? "2026-05-08",
-      incidentDate: normalizeDate(record.incidentDate),
+      releaseDate: normalizeReleaseDate(record.releaseDate) ?? "2026-05-08",
+      incidentDate: normalizeIncidentDate(record.incidentDate),
       locationName: record.locationName ?? "Unknown location",
       latitude: record.latitude ?? null,
       longitude: record.longitude ?? null,
@@ -577,18 +735,10 @@ async function loadOfficialBundles() {
 }
 
 function isApprovedOfficialFallbackUrl(url: string) {
-  try {
-    const parsed = new URL(url);
-    return (
-      /(^|\.)war\.gov$/i.test(parsed.hostname) ||
-      parsed.hostname === "d34w7g4gy10iej.cloudfront.net"
-    );
-  } catch {
-    return false;
-  }
+  return isValidatedHttpsUrl(url, BUNDLE_HOSTS);
 }
 
-function parseCsv(csvText: string) {
+export function parseCsv(csvText: string) {
   const rows: string[][] = [];
   let row: string[] = [];
   let cell = "";
@@ -624,7 +774,114 @@ function parseCsv(csvText: string) {
     rows.push(row);
   }
 
+  if (insideQuotes) throw new Error("Official CSV contains an unterminated quoted field");
+
   return rows;
+}
+
+function normalizeCsvHeader(value: string) {
+  return value.replace(/^\uFEFF/, "").replace(/\s+/g, " ").trim().toLowerCase();
+}
+
+export function buildReleaseTagMap(releaseDates: string[]) {
+  const dates = [...new Set(releaseDates)].sort();
+  return new Map(
+    dates.map((date, index) => [date, `release-${String(index + 1).padStart(2, "0")}`])
+  );
+}
+
+export function assertCumulativeSnapshot(
+  previousCases: CaseRecord[],
+  discoveries: Array<{
+    releaseDate: string | null;
+    title?: string;
+    mediaUrl?: string | null;
+  }>
+) {
+  if (!previousCases.length) return;
+  if (discoveries.length < previousCases.length) {
+    throw new Error(
+      `Official cumulative CSV regressed from ${previousCases.length} to ${discoveries.length} records; preserving existing data`
+    );
+  }
+
+  const countByDate = (records: Array<{ releaseDate: string | null }>) => {
+    const counts = new Map<string, number>();
+    for (const record of records) {
+      if (!record.releaseDate) continue;
+      counts.set(record.releaseDate, (counts.get(record.releaseDate) ?? 0) + 1);
+    }
+    return counts;
+  };
+  const previousCounts = countByDate(previousCases);
+  const nextCounts = countByDate(discoveries);
+  for (const [date, previousCount] of previousCounts) {
+    const nextCount = nextCounts.get(date) ?? 0;
+    if (nextCount < previousCount) {
+      throw new Error(
+        `Official cumulative CSV regressed release ${date} from ${previousCount} to ${nextCount} records; preserving existing data`
+      );
+    }
+  }
+
+  const authoritativeCases = previousCases.filter((record) => record.tags.includes("csv"));
+  const previousIdentityCounts = countStableIdentities(authoritativeCases);
+  const nextIdentityCounts = countStableIdentities(discoveries);
+  for (const prior of authoritativeCases) {
+    const stableIdentityRemains = stableIdentityKeys(prior).some(
+      (key) => previousIdentityCounts.get(key) === 1 && nextIdentityCounts.get(key) === 1
+    );
+    if (!stableIdentityRemains) {
+      throw new Error(
+        `Official cumulative CSV no longer contains a unique identity for ${prior.id}; preserving existing data`
+      );
+    }
+  }
+}
+
+type StableIdentityRecord = {
+  releaseDate: string | null;
+  title?: string;
+  mediaUrl?: string | null;
+};
+
+function countStableIdentities(records: StableIdentityRecord[]) {
+  const counts = new Map<string, number>();
+  for (const record of records) {
+    for (const key of stableIdentityKeys(record)) {
+      counts.set(key, (counts.get(key) ?? 0) + 1);
+    }
+  }
+  return counts;
+}
+
+function stableIdentityKeys(record: StableIdentityRecord) {
+  if (!record.releaseDate) return [];
+  const keys: string[] = [];
+  if (record.title) {
+    const identifier = officialRecordKey({ title: record.title, releaseDate: record.releaseDate });
+    if (identifier) keys.push(`code:${identifier}`);
+  }
+  if (record.mediaUrl) {
+    try {
+      const mediaUrl = validatedHttpsUrl(record.mediaUrl, IDENTITY_MEDIA_HOSTS);
+      keys.push(`media:${record.releaseDate}:${mediaUrl.toString()}`);
+    } catch {
+      // An invalid media URL cannot serve as an authoritative stable identity.
+    }
+  }
+  return keys;
+}
+
+function isSaneReleaseDate(date: string) {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return false;
+  const timestamp = Date.parse(`${date}T00:00:00Z`);
+  if (Number.isNaN(timestamp) || new Date(timestamp).toISOString().slice(0, 10) !== date) {
+    return false;
+  }
+  const earliestPursueRelease = Date.parse("2026-05-08T00:00:00Z");
+  const tomorrow = Date.now() + 24 * 60 * 60 * 1000;
+  return timestamp >= earliestPursueRelease && timestamp <= tomorrow;
 }
 
 function valueAt(row: string[], index: number) {
@@ -652,15 +909,20 @@ function toOfficialAssetUrl(value: string) {
   return absoluteUrl && isApprovedOfficialFallbackUrl(absoluteUrl) ? absoluteUrl : null;
 }
 
-function dvidsEmbedUrl(id: string, type: MediaType) {
+function parseDvidsIds(value: string) {
+  return [...new Set(value.split("|").map((id) => id.trim()).filter((id) => /^\d+$/.test(id)))];
+}
+
+function dvidsEmbedUrl(id: string | undefined, type: MediaType) {
   if (!id) return null;
   if (type === "audio") return `https://www.dvidshub.net/audio/embed/${id}`;
   if (type === "video") return `https://www.dvidshub.net/video/embed/${id}`;
   return null;
 }
 
-function warRecordUrl(title: string, releaseDate: string | null) {
-  const releaseLabel = releaseDate === "2026-05-22" ? "Release+02" : "Release+01";
+function warRecordUrl(title: string, releaseTag: string) {
+  const releaseNumber = releaseTag.match(/\d+$/)?.[0] ?? "01";
+  const releaseLabel = `Release+${releaseNumber.padStart(2, "0")}`;
   return `https://www.war.gov/UFO/${titleToHash(title)}/?releaseDate=${releaseLabel}`;
 }
 
@@ -686,25 +948,46 @@ function dedupeDiscoveries(discoveries: Discovery[]) {
 }
 
 async function listRemoteZipEntries(url: string) {
-  const head = await fetch(url, { method: "HEAD" });
+  const head = await safeFetch(url, { allowedHosts: BUNDLE_HOSTS, method: "HEAD" });
   if (!head.ok) throw new Error(`Failed to inspect ${url}: ${head.status}`);
   const contentLength = Number(head.headers.get("content-length"));
-  if (!Number.isFinite(contentLength) || contentLength <= 0) {
-    throw new Error(`Missing content-length for ${url}`);
+  if (
+    !Number.isSafeInteger(contentLength) ||
+    contentLength <= 0 ||
+    contentLength > MAX_ZIP_BYTES
+  ) {
+    throw new Error(`Invalid or excessive content-length for ${url}`);
   }
 
-  const tailLength = Math.min(contentLength, 1024 * 1024);
-  const response = await fetch(url, {
-    headers: { range: `bytes=${contentLength - tailLength}-${contentLength - 1}` }
+  const tailLength = Math.min(contentLength, MAX_ZIP_TAIL_BYTES);
+  const requestedStart = contentLength - tailLength;
+  const requestedEnd = contentLength - 1;
+  const response = await safeFetch(url, {
+    allowedHosts: BUNDLE_HOSTS,
+    headers: { range: `bytes=${requestedStart}-${requestedEnd}` }
   });
-  if (!response.ok && response.status !== 206) {
+  if (response.status !== 206) {
     throw new Error(`Failed to read ZIP directory for ${url}: ${response.status}`);
   }
+  const contentRange = parseContentRange(response.headers.get("content-range"));
+  if (
+    !contentRange ||
+    contentRange.start !== requestedStart ||
+    contentRange.end !== requestedEnd ||
+    contentRange.total !== contentLength
+  ) {
+    throw new Error(`Invalid Content-Range for ${url}`);
+  }
 
-  const tail = Buffer.from(await response.arrayBuffer());
-  const tailStart = contentLength - tail.length;
+  const tail = Buffer.from(await readBytesBounded(response, tailLength));
+  if (tail.length !== tailLength) throw new Error(`Incomplete ZIP tail response for ${url}`);
+  return parseZipDirectoryTail(tail, requestedStart, url);
+}
+
+export function parseZipDirectoryTail(tail: Buffer, tailStart: number, url = "ZIP") {
   const eocdOffset = findSignatureReverse(tail, 0x06054b50);
   if (eocdOffset < 0) throw new Error(`ZIP end-of-central-directory not found for ${url}`);
+  assertBufferRange(tail, eocdOffset, 22, `ZIP end-of-central-directory for ${url}`);
 
   let entryCount = tail.readUInt16LE(eocdOffset + 10);
   let centralDirectorySize = tail.readUInt32LE(eocdOffset + 12);
@@ -717,23 +1000,43 @@ async function listRemoteZipEntries(url: string) {
   ) {
     const locatorOffset = findSignatureReverse(tail.subarray(0, eocdOffset), 0x07064b50);
     if (locatorOffset < 0) throw new Error(`ZIP64 locator not found for ${url}`);
-    const zip64Offset = Number(tail.readBigUInt64LE(locatorOffset + 8));
+    assertBufferRange(tail, locatorOffset, 20, `ZIP64 locator for ${url}`);
+    const zip64Offset = safeZipNumber(tail.readBigUInt64LE(locatorOffset + 8), "ZIP64 offset", url);
     const zip64TailOffset = zip64Offset - tailStart;
-    if (zip64TailOffset < 0 || zip64TailOffset + 56 > tail.length) {
-      throw new Error(`ZIP64 directory is outside fetched range for ${url}`);
-    }
+    assertBufferRange(tail, zip64TailOffset, 56, `ZIP64 directory for ${url}`);
     if (tail.readUInt32LE(zip64TailOffset) !== 0x06064b50) {
       throw new Error(`ZIP64 end-of-central-directory not found for ${url}`);
     }
-    entryCount = Number(tail.readBigUInt64LE(zip64TailOffset + 32));
-    centralDirectorySize = Number(tail.readBigUInt64LE(zip64TailOffset + 40));
-    centralDirectoryOffset = Number(tail.readBigUInt64LE(zip64TailOffset + 48));
+    entryCount = safeZipNumber(tail.readBigUInt64LE(zip64TailOffset + 32), "entry count", url);
+    centralDirectorySize = safeZipNumber(
+      tail.readBigUInt64LE(zip64TailOffset + 40),
+      "central-directory size",
+      url
+    );
+    centralDirectoryOffset = safeZipNumber(
+      tail.readBigUInt64LE(zip64TailOffset + 48),
+      "central-directory offset",
+      url
+    );
+  }
+
+  if (!Number.isSafeInteger(entryCount) || entryCount < 0 || entryCount > MAX_ZIP_ENTRIES) {
+    throw new Error(`ZIP entry count is invalid or excessive for ${url}`);
+  }
+  if (
+    !Number.isSafeInteger(centralDirectorySize) ||
+    centralDirectorySize < 0 ||
+    centralDirectorySize > MAX_CENTRAL_DIRECTORY_BYTES ||
+    !Number.isSafeInteger(centralDirectoryOffset) ||
+    centralDirectoryOffset < 0
+  ) {
+    throw new Error(`ZIP central-directory range is invalid or excessive for ${url}`);
   }
 
   const directoryTailOffset = centralDirectoryOffset - tailStart;
   if (
     directoryTailOffset < 0 ||
-    directoryTailOffset + centralDirectorySize > tail.length
+    centralDirectorySize > tail.length - directoryTailOffset
   ) {
     throw new Error(`Central directory is outside fetched range for ${url}`);
   }
@@ -741,22 +1044,66 @@ async function listRemoteZipEntries(url: string) {
   const entries: Array<{ name: string; compressedSize: number; uncompressedSize: number }> = [];
   let offset = directoryTailOffset;
   for (let index = 0; index < entryCount; index += 1) {
+    assertBufferRange(tail, offset, 46, `central directory entry ${index} for ${url}`);
     if (tail.readUInt32LE(offset) !== 0x02014b50) {
       throw new Error(`Invalid central directory entry ${index} for ${url}`);
     }
     const compressedSize = tail.readUInt32LE(offset + 20);
     const uncompressedSize = tail.readUInt32LE(offset + 24);
+    if (compressedSize === 0xffffffff || uncompressedSize === 0xffffffff) {
+      throw new Error(`ZIP64 entry sizes are unsupported for entry ${index} in ${url}`);
+    }
     const fileNameLength = tail.readUInt16LE(offset + 28);
     const extraLength = tail.readUInt16LE(offset + 30);
     const commentLength = tail.readUInt16LE(offset + 32);
+    const entryLength = 46 + fileNameLength + extraLength + commentLength;
+    assertBufferRange(tail, offset, entryLength, `central directory entry ${index} for ${url}`);
+    if (offset + entryLength > directoryTailOffset + centralDirectorySize) {
+      throw new Error(`Central directory entry ${index} exceeds declared size for ${url}`);
+    }
     const name = tail
       .subarray(offset + 46, offset + 46 + fileNameLength)
       .toString("utf8");
     entries.push({ name, compressedSize, uncompressedSize });
-    offset += 46 + fileNameLength + extraLength + commentLength;
+    offset += entryLength;
   }
 
   return entries;
+}
+
+export function parseContentRange(value: string | null) {
+  const match = value?.match(/^bytes (\d+)-(\d+)\/(\d+)$/i);
+  if (!match) return null;
+  const [start, end, total] = match.slice(1).map(Number);
+  if (
+    ![start, end, total].every(Number.isSafeInteger) ||
+    start < 0 ||
+    end < start ||
+    total <= end
+  ) {
+    return null;
+  }
+  return { start, end, total };
+}
+
+function assertBufferRange(buffer: Buffer, offset: number, length: number, label: string) {
+  if (
+    !Number.isSafeInteger(offset) ||
+    !Number.isSafeInteger(length) ||
+    offset < 0 ||
+    length < 0 ||
+    offset > buffer.length ||
+    length > buffer.length - offset
+  ) {
+    throw new Error(`${label} is outside the fetched ZIP tail`);
+  }
+}
+
+function safeZipNumber(value: bigint, label: string, url: string) {
+  if (value > BigInt(Number.MAX_SAFE_INTEGER)) {
+    throw new Error(`${label} exceeds safe numeric range for ${url}`);
+  }
+  return Number(value);
 }
 
 function findSignatureReverse(buffer: Buffer, signature: number) {
@@ -766,7 +1113,25 @@ function findSignatureReverse(buffer: Buffer, signature: number) {
   return -1;
 }
 
-function normalizeDate(value: string | null | undefined) {
+export function normalizeReleaseDate(value: string | null | undefined) {
+  return normalizeDateWithTwoDigitYear(value, (suffix) => 2000 + suffix);
+}
+
+export function normalizeIncidentDate(
+  value: string | null | undefined,
+  now = new Date()
+) {
+  const currentTwoDigitYear = now.getUTCFullYear() % 100;
+  return normalizeDateWithTwoDigitYear(
+    value,
+    (suffix) => (suffix <= currentTwoDigitYear ? 2000 : 1900) + suffix
+  );
+}
+
+function normalizeDateWithTwoDigitYear(
+  value: string | null | undefined,
+  resolveTwoDigitYear: (suffix: number) => number
+) {
   if (!value || value === "N/A") return null;
   const iso = findIsoDate(value);
   if (iso) return iso;
@@ -776,15 +1141,16 @@ function normalizeDate(value: string | null | undefined) {
   if (yearRange) return `${yearRange[1]}-01-01`;
   const compact = value.match(/^(\d{1,2})\/(\d{1,2})\/(\d{2,4})$/);
   if (!compact) return null;
-  let year =
-    compact[3].length === 2 ? Number(`20${compact[3]}`) : Number(compact[3]);
-  if (year > 2026 && compact[3].length === 2) year -= 100;
+  const year =
+    compact[3].length === 2
+      ? resolveTwoDigitYear(Number(compact[3]))
+      : Number(compact[3]);
   const month = compact[1].padStart(2, "0");
   const day = compact[2].padStart(2, "0");
   return `${year}-${month}-${day}`;
 }
 
-function coordinatesForLocation(locationName: string | undefined) {
+export function coordinatesForLocation(locationName: string | undefined) {
   const location = (locationName ?? "").toLowerCase();
   const matches: Array<[RegExp, { latitude: number; longitude: number }]> = [
     [/iraq/, { latitude: 33.2232, longitude: 43.6793 }],
@@ -810,8 +1176,8 @@ function coordinatesForLocation(locationName: string | undefined) {
     [/kazakhstan/, { latitude: 48.0196, longitude: 66.9237 }],
     [/iran/, { latitude: 32.4279, longitude: 53.688 }],
     [/papua new guinea/, { latitude: -6.315, longitude: 143.9555 }],
-    [/mexico/, { latitude: 23.6345, longitude: -102.5528 }],
     [/new mexico/, { latitude: 34.5199, longitude: -105.8701 }],
+    [/mexico/, { latitude: 23.6345, longitude: -102.5528 }],
     [/texas/, { latitude: 31.9686, longitude: -99.9018 }],
     [/detroit/, { latitude: 42.3314, longitude: -83.0458 }],
     [/midwestern united states/, { latitude: 41.8781, longitude: -93.0977 }],
@@ -860,7 +1226,7 @@ function inferAgency(text: string) {
 function isPotentialOfficialAsset(url: string) {
   try {
     const parsed = new URL(url);
-    if (!/(^|\.)war\.gov$/i.test(parsed.hostname)) return false;
+    if (!isValidatedHttpsUrl(url, WAR_HOSTS)) return false;
     if (/\/ufo\/?$/i.test(parsed.pathname)) return true;
     return /\.(pdf|docx?|xlsx?|pptx?|txt|csv|png|jpe?g|gif|webp|tiff?|mp4|mov|m4v|webm|avi)$/i.test(
       parsed.pathname
@@ -933,7 +1299,16 @@ async function writeJson(relativePath: string, value: unknown) {
   );
 }
 
-main().catch((error) => {
-  console.error(error);
-  process.exitCode = 1;
-});
+function errorMessage(error: unknown) {
+  return (error instanceof Error ? error.message : String(error))
+    .replace(/[\u0000-\u001F\u007F]+/g, " ")
+    .trim()
+    .slice(0, 500);
+}
+
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
+  main().catch((error) => {
+    console.error(error);
+    process.exitCode = 1;
+  });
+}

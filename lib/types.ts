@@ -31,7 +31,13 @@ export const ReleaseRecordSchema = z.object({
 
 export const SyncMetadataSchema = z.object({
   lastSyncedAt: z.string(),
+  lastAttemptedAt: z.string().optional(),
+  lastSuccessfulAt: z.string().optional(),
   sourceUrl: z.string().url(),
+  sourceCsvUrl: z.string().url().optional(),
+  sourceCsvSha256: z.string().regex(/^[a-f0-9]{64}$/).optional(),
+  sourceCsvLastModified: z.string().optional(),
+  sourceError: z.string().optional(),
   totalRecords: z.number().int().nonnegative(),
   newRecordCount: z.number().int().nonnegative(),
   changedRecordCount: z.number().int().nonnegative(),
