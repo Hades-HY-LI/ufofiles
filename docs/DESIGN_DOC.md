@@ -19,11 +19,13 @@ war.gov/ufo -> sync script -> data/*.json -> Next.js build -> Vercel static app
 
 ## Data Flow
 
-1. `npm run sync:war` fetches public `war.gov/ufo` pages and files.
-2. The sync normalizes records into stable JSON.
-3. The sync writes `data/sync-metadata.json` with freshness and banner inputs.
-4. `npm run build` validates and reads JSON.
-5. Vercel deploys the static site.
+1. Every two weeks, or when a release is announced, a maintainer follows
+   `docs/MANUAL_SYNC.md` from a dated branch.
+2. `npm run sync:war` fetches public `war.gov/ufo` pages and files.
+3. The sync normalizes records into stable JSON and writes freshness metadata.
+4. The maintainer validates the data and reviews the generated diff in a PR.
+5. `npm run build` validates and reads the approved JSON.
+6. Vercel deploys the static site after the data PR is merged.
 
 ## Rendering Strategy
 

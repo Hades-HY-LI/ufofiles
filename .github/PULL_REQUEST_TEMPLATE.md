@@ -4,10 +4,17 @@ What changed?
 
 ## Verification
 
-- [ ] `npm run sync:war`
+- [ ] `npm run validate:data`
 - [ ] `npm run lint`
 - [ ] `npm run typecheck`
+- [ ] `npm test`
 - [ ] `npm run build`
+
+For a manual data-sync PR, also confirm:
+
+- [ ] Followed `docs/MANUAL_SYNC.md`.
+- [ ] `npm run discover:war-bundles` and `npm run sync:war` completed.
+- [ ] `data/sync-metadata.json` reports `fresh`.
 
 ## Data / Source Notes
 

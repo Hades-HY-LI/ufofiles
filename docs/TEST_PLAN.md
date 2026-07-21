@@ -13,11 +13,15 @@ npm run lint
 npm test
 ```
 
-Before release, also run:
+During a manual data sync, follow `docs/MANUAL_SYNC.md` and run:
 
 ```bash
+npm run discover:war-bundles
 npm run sync:war
 npm run validate:data
+npm run lint
+npm run typecheck
+npm test
 npm run build
 ```
 
@@ -61,15 +65,20 @@ npm run build
 
 ## Regression Checks
 
-Run these before deploy:
+Run these before publishing a manual data update:
 
 ```bash
+npm run discover:war-bundles
 npm run sync:war
 npm run validate:data
-npm run build
 npm run lint
+npm run typecheck
 npm test
+npm run build
 ```
+
+Require `data/sync-metadata.json` to report `fresh` before continuing. A
+`partial` or `failed` attempt must not be committed or deployed.
 
 Then manually spot-check:
 
