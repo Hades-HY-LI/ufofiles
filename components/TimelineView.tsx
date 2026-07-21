@@ -107,34 +107,45 @@ export function TimelineView({ cases }: TimelineViewProps) {
     if (!groups.some((group) => group.key === activeRelease)) {
       setActiveRelease(groups[0].key);
     }
-    if (!filtered.some((caseRecord) => caseRecord.id === openId)) {
+    if (openId && !filtered.some((caseRecord) => caseRecord.id === openId)) {
       setOpenId(filtered[0]?.id ?? "");
     }
   }, [activeRelease, filtered, groups, openId]);
 
   useEffect(() => {
     if (!groups.length) return;
-    const observer = new IntersectionObserver(
-      (entries) => {
-        const visible = entries
-          .filter((entry) => entry.isIntersecting)
-          .sort((left, right) => right.intersectionRatio - left.intersectionRatio)[0];
-        const key = visible?.target.getAttribute("data-release-key");
-        if (key) setActiveRelease(key);
-      },
-      { rootMargin: "-30% 0px -55% 0px", threshold: [0.12, 0.28, 0.5] }
-    );
-    groups.forEach((group) => {
-      const node = document.getElementById(releaseDomId(group.key));
-      if (node) observer.observe(node);
-    });
-    return () => observer.disconnect();
+    let frame = 0;
+    const updateActiveRelease = () => {
+      frame = 0;
+      const marker = Math.min(window.innerHeight * 0.32, 280);
+      let nextActive = groups[0].key;
+
+      for (const group of groups) {
+        const node = document.getElementById(releaseDomId(group.key));
+        if (!node || node.getBoundingClientRect().top > marker) break;
+        nextActive = group.key;
+      }
+
+      setActiveRelease((current) => current === nextActive ? current : nextActive);
+    };
+    const scheduleUpdate = () => {
+      if (!frame) frame = window.requestAnimationFrame(updateActiveRelease);
+    };
+
+    updateActiveRelease();
+    window.addEventListener("scroll", scheduleUpdate, { passive: true });
+    window.addEventListener("resize", scheduleUpdate);
+    return () => {
+      if (frame) window.cancelAnimationFrame(frame);
+      window.removeEventListener("scroll", scheduleUpdate);
+      window.removeEventListener("resize", scheduleUpdate);
+    };
   }, [groups]);
 
   return (
     <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_9.5rem]">
       <section className="min-w-0">
-        <div className="sticky top-[7.5rem] z-20 mb-5 rounded-lg border border-slate-200 bg-white/92 p-3 shadow-sm backdrop-blur">
+        <div className="z-20 mb-5 rounded-lg border border-slate-200 bg-white/95 p-3 shadow-sm backdrop-blur lg:sticky lg:top-[4.5rem]">
           <div className="grid gap-3 lg:grid-cols-[1fr_auto] lg:items-center">
             <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
               <ControlSelect label="Release" value={release} onChange={setRelease}>
@@ -176,6 +187,7 @@ export function TimelineView({ cases }: TimelineViewProps) {
                   key={item}
                   type="button"
                   onClick={() => setDensity(item)}
+                  aria-pressed={density === item}
                   className={clsx(
                     "rounded px-3 py-2 text-xs font-semibold capitalize transition",
                     density === item
@@ -228,6 +240,7 @@ export function TimelineView({ cases }: TimelineViewProps) {
             <a
               key={group.key}
               href={`#${releaseDomId(group.key)}`}
+              aria-current={activeRelease === group.key ? "location" : undefined}
               className={clsx(
                 "relative block rounded-md px-2 py-1.5 text-xs transition",
                 activeRelease === group.key
@@ -284,7 +297,7 @@ function ReleaseStage({
           "border-b border-slate-200 p-5 lg:border-b-0 lg:border-r",
           latest ? "bg-blue-50" : "bg-slate-50"
         )}>
-          <div className="sticky top-48">
+          <div className="sticky top-40">
             <div className="text-xs font-bold uppercase tracking-[0.14em] text-blue-700">
               {monthLabel(group.releaseDate)}
             </div>
@@ -353,35 +366,63 @@ function TimelineRow({
   const sourceHref = getOfficialSourceHref(caseRecord);
   const mediaHref = getOfficialMediaHref(caseRecord);
   const canMap = caseRecord.latitude !== null && caseRecord.longitude !== null;
+  const detailsId = `timeline-details-${caseRecord.id}`;
 
   return (
     <article className={clsx("transition", open ? "bg-blue-50/70" : "hover:bg-slate-50")}>
       <button
         type="button"
         onClick={onOpen}
+        aria-expanded={open}
+        aria-controls={detailsId}
         className={clsx(
           "grid w-full gap-3 px-4 text-left md:grid-cols-[1fr_8.5rem_9rem_auto] md:items-center",
-          density === "compact" ? "py-3" : "py-4"
+          density === "compact" ? "py-2.5" : density === "detailed" ? "py-5" : "py-4"
         )}
       >
         <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-2">
-            <span className={clsx("inline-flex items-center gap-1 rounded-md border px-2 py-1 text-xs font-semibold", typeStyles[caseRecord.type].chip)}>
+            <span className={clsx(
+              "inline-flex items-center gap-1 rounded-md border text-xs font-semibold",
+              density === "compact" ? "px-1.5 py-0.5" : "px-2 py-1",
+              typeStyles[caseRecord.type].chip
+            )}>
               <Icon size={13} />
               {labelMediaType(caseRecord.type)}
             </span>
-            <span className="inline-flex items-center gap-1 rounded-md border border-lime-200 bg-lime-50 px-2 py-1 text-xs font-semibold text-lime-700">
-              <ShieldCheck size={13} />
-              Official source
-            </span>
+            {density !== "compact" ? (
+              <span className="inline-flex items-center gap-1 rounded-md border border-lime-200 bg-lime-50 px-2 py-1 text-xs font-semibold text-lime-700">
+                <ShieldCheck size={13} />
+                Official source
+              </span>
+            ) : null}
           </div>
-          <h3 className="mt-2 line-clamp-2 font-[var(--font-space)] text-base font-semibold text-slate-950">
+          <h3 className={clsx(
+            "line-clamp-2 font-[var(--font-space)] font-semibold text-slate-950",
+            density === "compact" ? "mt-1 text-sm" : "mt-2 text-base"
+          )}>
             {caseRecord.title}
           </h3>
           {density !== "compact" ? (
-            <p className="mt-1 line-clamp-2 text-sm leading-6 text-slate-600">
+            <p className={clsx(
+              "mt-1 text-sm leading-6 text-slate-600",
+              density === "detailed" ? "line-clamp-4" : "line-clamp-2"
+            )}>
               {caseRecord.summary}
             </p>
+          ) : null}
+          {density === "detailed" ? (
+            <div className="mt-3 flex flex-wrap items-center gap-2 text-xs text-slate-500">
+              <span className="inline-flex items-center gap-1">
+                <LocateFixed size={13} />
+                {caseRecord.locationName}
+              </span>
+              {caseRecord.tags.slice(0, 3).map((tag) => (
+                <span key={tag} className="rounded border border-slate-200 bg-white px-1.5 py-0.5 font-semibold">
+                  {tag}
+                </span>
+              ))}
+            </div>
           ) : null}
         </div>
         <div className="text-sm text-slate-600">
@@ -399,7 +440,7 @@ function TimelineRow({
         />
       </button>
       {open ? (
-        <div className="grid gap-5 border-t border-blue-200 px-4 py-5 lg:grid-cols-[minmax(0,1fr)_14rem_12rem]">
+        <div id={detailsId} className="grid gap-5 border-t border-blue-200 px-4 py-5 lg:grid-cols-[minmax(0,1fr)_14rem_12rem]">
           <div>
             <div className="mb-2 text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">
               File information
