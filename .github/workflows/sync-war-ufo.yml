@@ -9,15 +9,33 @@ permissions:
   contents: write
   pull-requests: write
 
+concurrency:
+  group: war-ufo-sync-automated-pr
+  cancel-in-progress: false
+
 jobs:
   sync:
-    runs-on: ubuntu-latest
+    runs-on: ${{ fromJSON(vars.WAR_UFO_RUNNER == 'ufo-sync' && '["self-hosted","ufo-sync"]' || '["ubuntu-latest"]') }}
     steps:
+      - name: Validate runner selection
+        env:
+          WAR_UFO_RUNNER: ${{ vars.WAR_UFO_RUNNER }}
+        run: |
+          case "$WAR_UFO_RUNNER" in
+            ""|"ubuntu-latest"|"ufo-sync") ;;
+            *)
+              echo "Unsupported WAR_UFO_RUNNER value. Use ubuntu-latest, ufo-sync, or leave it unset." >&2
+              exit 1
+              ;;
+          esac
+
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+        with:
+          persist-credentials: false
 
       - name: Setup Node
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           node-version: 22
           cache: npm
@@ -34,13 +52,36 @@ jobs:
       - name: Verify
         run: |
           npm run lint
-          npm run typecheck
-          npm run validate:data
+          npm test
           npm run build
 
+      - name: Require a fresh sync
+        run: |
+          node <<'NODE'
+          const fs = require('node:fs');
+          const metadata = JSON.parse(
+            fs.readFileSync('data/sync-metadata.json', 'utf8'),
+          );
+
+          if (metadata.status !== 'fresh') {
+            const message = 'The sync did not produce fresh metadata. No automated data PR was created.';
+            console.error(`WAR UFO sync health gate failed: ${message}`);
+
+            if (process.env.GITHUB_STEP_SUMMARY) {
+              fs.appendFileSync(
+                process.env.GITHUB_STEP_SUMMARY,
+                `## WAR UFO sync blocked\n\n${message}\n`,
+              );
+            }
+
+            process.exit(1);
+          }
+          NODE
+
       - name: Open data sync pull request
-        uses: peter-evans/create-pull-request@v7
+        uses: peter-evans/create-pull-request@22a9089034f40e5a961c8808d113e2c98fb63676 # v7
         with:
+          token: ${{ secrets.GITHUB_TOKEN }}
           commit-message: "chore(data): sync official UFO release data"
           title: "chore(data): sync official UFO release data"
           body: |
@@ -51,14 +92,9 @@ jobs:
             - `npm run discover:war-bundles`
             - `npm run sync:war`
             - `npm run lint`
-            - `npm run typecheck`
-            - `npm run validate:data`
+            - `npm test`
             - `npm run build`
           branch: automated/war-ufo-sync
           delete-branch: true
           add-paths: |
-            data/cases.json
-            data/releases.json
-            data/sync-metadata.json
-            data/official-bundles.json
-            data/official-release-pages.json
+            data/**

@@ -8,6 +8,20 @@ export function ReleaseBanner() {
   const hasUpdates =
     metadata.newRecordCount > 0 || metadata.changedRecordCount > 0;
   const isFresh = metadata.status === "fresh" && !hasUpdates;
+  const lastSuccessfulAt = metadata.lastSuccessfulAt ?? metadata.lastSyncedAt;
+  const lastAttemptedAt = metadata.lastAttemptedAt ?? metadata.lastSyncedAt;
+  const healthMessage =
+    metadata.status === "partial"
+      ? `Official-source sync partial; some records may be missing. Last attempt: ${formatDate(
+          lastAttemptedAt.slice(0, 10)
+        )}. Last successful sync: ${formatDate(lastSuccessfulAt.slice(0, 10))}.`
+      : metadata.status === "failed"
+        ? `Official-source sync failed. Last attempt: ${formatDate(
+            lastAttemptedAt.slice(0, 10)
+          )}. Last successful sync: ${formatDate(lastSuccessfulAt.slice(0, 10))}.`
+        : `Official-source monitor ${metadata.status}. Last successful sync: ${formatDate(
+            lastSuccessfulAt.slice(0, 10)
+          )}.`;
 
   return (
     <div
@@ -21,17 +35,26 @@ export function ReleaseBanner() {
     >
       <div className="mx-auto flex max-w-7xl flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-2">
-          <Bell size={16} className="shrink-0 text-lime-700" />
+          <Bell
+            size={16}
+            className={`shrink-0 ${
+              metadata.status === "failed"
+                ? "text-red-700"
+                : metadata.status === "partial" || metadata.status === "stale"
+                  ? "text-amber-700"
+                  : "text-lime-700"
+            }`}
+          />
           <span>
-            {hasUpdates
-              ? `${metadata.newRecordCount} new and ${metadata.changedRecordCount} changed official records synced from war.gov/ufo.`
-              : isFresh
+            {metadata.status !== "fresh"
+              ? healthMessage
+              : hasUpdates
+                ? `${metadata.newRecordCount} new and ${metadata.changedRecordCount} changed official records synced from war.gov/ufo.`
+                : isFresh
                 ? `Official-source data fresh. Last sync: ${formatDate(
-                    metadata.lastSyncedAt.slice(0, 10)
+                    lastSuccessfulAt.slice(0, 10)
                   )}.`
-                : `Official-source monitor ${metadata.status}. Last sync: ${formatDate(
-                    metadata.lastSyncedAt.slice(0, 10)
-                  )}.`}
+                : healthMessage}
           </span>
         </div>
         <Link

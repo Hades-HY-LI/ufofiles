@@ -3,8 +3,17 @@ import { readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import type { MediaType } from "../lib/types";
+import {
+  isValidatedHttpsUrl,
+  readTextBounded,
+  safeFetch,
+  validatedHttpsUrl
+} from "./war-ufo-network";
 
 const SOURCE_URL = "https://www.war.gov/ufo/";
+const WAR_HOSTS = new Set(["war.gov", "www.war.gov"]);
+const BUNDLE_HOSTS = new Set([...WAR_HOSTS, "d34w7g4gy10iej.cloudfront.net"]);
+const MAX_HTML_BYTES = 5 * 1024 * 1024;
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const root = path.resolve(__dirname, "..");
 
@@ -53,6 +62,14 @@ const defaultPages: DiscoveryPage[] = [
   {
     url: "https://www.war.gov/News/Releases/Release/Article/4499305/department-of-war-publishes-second-release-of-unidentified-anomalous-phenomena/",
     kind: "release"
+  },
+  {
+    url: "https://www.war.gov/News/Releases/Release/Article/4515408/department-of-war-publishes-third-release-of-unidentified-anomalous-phenomena-f/",
+    kind: "release"
+  },
+  {
+    url: "https://www.war.gov/News/Releases/Release/Article/4539898/department-of-war-publishes-fourth-release-of-unidentified-anomalous-phenomena/",
+    kind: "release"
   }
 ];
 
@@ -62,7 +79,8 @@ async function main() {
   const pageQueue = new Map<string, DiscoveryPage>();
 
   for (const page of [...defaultPages, ...configuredPages]) {
-    pageQueue.set(normalizeUrl(page.url), page);
+    const url = normalizeUrl(page.url);
+    if (url) pageQueue.set(url, { ...page, url });
   }
 
   const snapshots: PageSnapshot[] = [];
@@ -113,7 +131,8 @@ async function main() {
 }
 
 async function fetchPage(url: string): Promise<PageSnapshot> {
-  const response = await fetch(url, {
+  const response = await safeFetch(url, {
+    allowedHosts: WAR_HOSTS,
     headers: {
       accept: "text/html,application/xhtml+xml",
       "user-agent":
@@ -121,11 +140,11 @@ async function fetchPage(url: string): Promise<PageSnapshot> {
     }
   });
   if (!response.ok) throw new Error(`HTTP ${response.status}`);
-  const html = await response.text();
+  const html = await readTextBounded(response, MAX_HTML_BYTES);
   const $ = cheerio.load(html);
   const text = $("body").text().replace(/\s+/g, " ").trim();
   const title = cleanTitle($("h1").first().text() || $("title").text());
-  return { url, html, text, title };
+  return { url: response.url, html, text, title };
 }
 
 function discoverReleasePages(snapshot: PageSnapshot) {
@@ -161,7 +180,7 @@ function discoverBundles(snapshot: PageSnapshot) {
     const rawUrl = $(element).attr("href") ?? $(element).attr("src");
     if (!rawUrl) return;
 
-    const url = normalizeUrl(rawUrl, snapshot.url);
+    const url = normalizeUrl(rawUrl, snapshot.url, BUNDLE_HOSTS);
     if (!url || !isApprovedOfficialFallbackUrl(url)) return;
     if (!/\.zip(\?|$)/i.test(new URL(url).pathname)) return;
 
@@ -255,6 +274,8 @@ function inferTypeFromUrlPath(url: string): MediaType {
 }
 
 function inferReleaseDate(snapshot: PageSnapshot) {
+  if (/071026|july 10, 2026/i.test(snapshot.html)) return "2026-07-10";
+  if (/061226|june 12, 2026/i.test(snapshot.html)) return "2026-06-12";
   if (/052226|may 22, 2026/i.test(snapshot.html)) return "2026-05-22";
   if (/050826|may 8, 2026/i.test(snapshot.html)) return "2026-05-08";
   return new Date().toISOString().slice(0, 10);
@@ -273,6 +294,8 @@ function inferReleaseTag(title: string, text: string, releaseDate: string) {
   if (match) return match[1];
   if (releaseDate === "2026-05-22") return "release-02";
   if (releaseDate === "2026-05-08") return "release-01";
+  if (releaseDate === "2026-06-12") return "release-03";
+  if (releaseDate === "2026-07-10") return "release-04";
   return `release-${releaseDate.replaceAll("-", "").slice(2)}`;
 }
 
@@ -282,15 +305,7 @@ function releaseTagLabel(releaseTag: string) {
 }
 
 function isApprovedOfficialFallbackUrl(url: string) {
-  try {
-    const parsed = new URL(url);
-    return (
-      /(^|\.)war\.gov$/i.test(parsed.hostname) ||
-      parsed.hostname === "d34w7g4gy10iej.cloudfront.net"
-    );
-  } catch {
-    return false;
-  }
+  return isValidatedHttpsUrl(url, BUNDLE_HOSTS);
 }
 
 function findIsoDate(text: string) {
@@ -313,11 +328,13 @@ function titleFromUrl(url: string) {
   return cleanTitle(decodeURIComponent(name.replace(/\.[^.]+$/, "").replace(/[-_]+/g, " ")));
 }
 
-function normalizeUrl(rawUrl: string, baseUrl = SOURCE_URL) {
+function normalizeUrl(
+  rawUrl: string,
+  baseUrl = SOURCE_URL,
+  allowedHosts: ReadonlySet<string> = WAR_HOSTS
+) {
   try {
-    const url = new URL(rawUrl, baseUrl);
-    url.hash = "";
-    return url.toString();
+    return validatedHttpsUrl(rawUrl, allowedHosts, baseUrl).toString();
   } catch {
     return "";
   }
