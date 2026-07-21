@@ -4,6 +4,11 @@
 
 Sync keeps the static JSON archive aligned with the official public source at `war.gov/ufo`.
 
+The current operating model is a maintainer-reviewed manual sync every two
+weeks and whenever War.gov announces a new release. Start with
+`docs/MANUAL_SYNC.md`; this runbook documents the lower-level source, fallback,
+freshness, and recovery behavior behind that procedure.
+
 ## Command
 
 Project sync command:
@@ -25,11 +30,15 @@ npm run lint
 npm test
 ```
 
-## Scheduled Automation
+## Optional Manual-Dispatch Workflow
 
-`.github/workflows/sync-war-ufo.yml` runs daily at 09:17 UTC and retains
-manual dispatch from the GitHub Actions tab. The job runner is selected by the
-repository variable `WAR_UFO_RUNNER`:
+`.github/workflows/sync-war-ufo.yml` has no recurring schedule. It can be
+started manually from the GitHub Actions tab as a diagnostic or recovery tool,
+but it is not the archive's normal update mechanism. Local syncs should follow
+`docs/MANUAL_SYNC.md` and require no Actions variable or runner.
+
+For an explicitly configured recovery run, the job runner is selected by the
+optional repository variable `WAR_UFO_RUNNER`:
 
 - Unset or empty: use the GitHub-hosted `ubuntu-latest` runner.
 - `ufo-sync`: use a self-hosted runner carrying the custom `ufo-sync` label.
@@ -61,13 +70,12 @@ disables persisted checkout credentials, supplies the scoped GitHub token only
 to the pull-request action, and runs the sync parser regression suite through
 `npm test` before the freshness gate.
 
-Configure repository notifications or an external monitor to alert on failures
-of **Sync WAR UFO releases**. Treat a red run and its **WAR UFO sync blocked**
-summary as a source-reachability/data-freshness incident, even when the existing
-archive continues to build. Diagnose degraded metadata in that run's workspace
-logs; there will be no automation PR to review or merge.
+If a maintainer dispatches **Sync WAR UFO releases**, treat a red run and its
+**WAR UFO sync blocked** summary as a source-reachability/data-freshness
+incident. Diagnose degraded metadata in that run's logs; there will be no
+automation PR to review or merge.
 
-## Self-hosted Runner Recovery
+## Optional Self-hosted Runner Recovery
 
 Provision a dedicated, patched, ephemeral Linux VM with outbound HTTPS access
 and a non-root service account. Put it in an isolated runner group allowed only
@@ -113,21 +121,18 @@ isolate the account from production credentials, and never reuse a job
 workspace or host image without reimaging it.
 
 Protect the default branch with a repository ruleset requiring review and a CI
-health check that evaluates the PR revision's `data/sync-metadata.json` as
-`fresh`. The scheduled workflow will not create degraded automation PRs; keep
-auto-merge disabled for any manually created degraded data PR. Maintainers
-should not assume the scheduled run is attached to a generated PR's head
-commit, so branch protection must require the equivalent PR health check before
-merge.
+health check that evaluates a data PR's `data/sync-metadata.json` as `fresh`.
+Keep auto-merge disabled for degraded data PRs.
 
-To return scheduling to GitHub-hosted capacity, remove `WAR_UFO_RUNNER` (or set
-it to `ubuntu-latest`). This is an execution rollback only; it will not resolve
-a War.gov `403`, and the health gate should remain enabled.
+To return an optional manual-dispatch run to GitHub-hosted capacity, remove
+`WAR_UFO_RUNNER` or set it to `ubuntu-latest`. This will not resolve a War.gov
+`403`, and the health gate should remain enabled.
 
 ## Release 03/04 Recovery
 
-Run recovery on a network path that can reach the official War.gov sources,
-preferably by manually dispatching the `ufo-sync` runner:
+Run recovery on a network path that can reach the official War.gov sources.
+The normal path is the local procedure in `docs/MANUAL_SYNC.md`; an explicitly
+configured `ufo-sync` runner remains an optional alternative:
 
 ```bash
 gh workflow run sync-war-ufo.yml
@@ -182,15 +187,17 @@ and that the derived relationship graph has valid nodes, edges, and reasons.
 
 ## Discovery Pass
 
-`npm run discover:war-bundles` runs before `npm run sync:war` in GitHub
-Actions. It scans only configured official War.gov pages and release pages found
-from official War.gov UAP search results. When it finds approved ZIP bundle
-links, it updates `data/official-bundles.json`; it does not ingest mirrors,
-social posts, community catalogs, or search-engine-only results.
+`npm run discover:war-bundles` runs before `npm run sync:war` in the manual
+procedure and the optional workflow. It scans only configured official War.gov
+pages and release pages found from official War.gov UAP search results. When it
+finds approved ZIP bundle links, it updates `data/official-bundles.json`; it
+does not ingest mirrors, social posts, community catalogs, or
+search-engine-only results.
 
 If official pages return `403`, the discovery pass leaves the existing registry
-in place and prints a warning. This keeps scheduled runs useful without treating
-a blocked War.gov edge response as evidence that no new official files exist.
+in place and prints a warning. This preserves the last known registry without
+treating a blocked War.gov edge response as evidence that no new official files
+exist.
 
 ## Manifest Fallback
 
@@ -234,10 +241,10 @@ the official bundle as a single source record.
 
 Fresh no-op runs should not create timestamp-only commits. If a successful live
 sync discovers no new or changed cases and no release-count changes, preserve
-the previous metadata file so scheduled GitHub Actions stay quiet. A degraded
-run is not a fresh no-op: automation must write `partial` or `failed` attempt
-metadata even when existing records are preserved, so the final workflow health
-gate cannot report a false success.
+the previous metadata file so the manual working tree stays clean. A degraded
+run is not a fresh no-op: the sync must write `partial` or `failed` attempt
+metadata even when existing records are preserved, so neither a maintainer nor
+the optional workflow can report a false success.
 
 ## Freshness Policy
 

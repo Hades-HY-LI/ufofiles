@@ -58,9 +58,24 @@ Recommended local flow:
 npm run discover:war-bundles
 npm run sync:war
 npm run validate:data
+npm run lint
+npm run typecheck
+npm test
 npm run build
-npm run dev
 ```
+
+## Data Update Operations
+
+The archive currently uses a maintainer-reviewed manual sync. Run the complete
+process every two weeks and whenever War.gov announces a new release. Normal new
+release batches do not require code changes; the sync discovers release dates
+dynamically. Every update must produce `fresh` sync metadata, pass validation,
+and be reviewed in a pull request before deployment.
+
+Follow [`docs/MANUAL_SYNC.md`](docs/MANUAL_SYNC.md) for the exact commands,
+review checklist, failure handling, commit, and pull-request steps. The GitHub
+Actions sync workflow is manual-dispatch only and is retained as an optional
+diagnostic/recovery tool; it is not the archive's scheduled update mechanism.
 
 ## Static Data Contract
 
@@ -91,6 +106,7 @@ See `docs/DATA_MODEL.md` for the field contract.
 - `docs/DESIGN_DOC.md`: app architecture and routes.
 - `docs/DESIGN.md`: current UX direction and interaction roadmap.
 - `docs/DATA_MODEL.md`: JSON data schema.
+- `docs/MANUAL_SYNC.md`: biweekly maintainer sync procedure.
 - `docs/SYNC_RUNBOOK.md`: official-source sync behavior.
 - `docs/DESIGN_SYSTEM.md`: approved dark archival UI direction.
 - `docs/IDEAS.md`: product ideas that preserve the official-source policy.
