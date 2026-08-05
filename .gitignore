@@ -8,3 +8,5 @@ out
 npm-debug.log*
 .DS_Store
 *.tsbuildinfo
+heygen-video-log.jsonl
+output/
