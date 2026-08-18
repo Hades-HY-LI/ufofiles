@@ -30,5 +30,13 @@
     "sourceUrl": "https://www.war.gov/ufo/",
     "fileCount": 40,
     "notes": "Automated sync record for official files detected on the PURSUE portal and official linked bundles."
+  },
+  {
+    "id": "pursue-release-05",
+    "title": "PURSUE Release 05",
+    "releaseDate": "2026-08-07",
+    "sourceUrl": "https://www.war.gov/ufo/",
+    "fileCount": 41,
+    "notes": "Automated sync record for official files detected on the PURSUE portal and official linked bundles."
   }
 ]
