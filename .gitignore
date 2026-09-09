@@ -10,3 +10,4 @@ npm-debug.log*
 *.tsbuildinfo
 heygen-video-log.jsonl
 output/
+handoff.md
